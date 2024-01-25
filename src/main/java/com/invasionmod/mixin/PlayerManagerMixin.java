@@ -34,8 +34,7 @@ public abstract class PlayerManagerMixin {
 
     @ModifyExpressionValue(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;getWorld(Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/server/world/ServerWorld;"), method = "onPlayerConnect")
     private ServerWorld onPlayerConnectInject(ServerWorld original, ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData) {
-        LOGGER.info(player.getName() + " just connected!");
-
+        LOGGER.info("connected uuid: " + player.getUuidAsString());
         NbtCompound playerNBT = ((PlayerManager) ((Object) this)).loadPlayerData(player);
         @SuppressWarnings("deprecation") RegistryKey<World> registryKey = playerNBT != null ? DimensionType.worldFromDimensionNbt(new Dynamic<>(NbtOps.INSTANCE, playerNBT.get("Dimension"))).resultOrPartial(LOGGER::error).orElse(World.OVERWORLD) : World.OVERWORLD;
 
