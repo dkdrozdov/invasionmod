@@ -1,9 +1,11 @@
 package com.invasionmod;
 
+import com.invasionmod.entity.effect.PhantomStatusEffect;
 import com.invasionmod.item.DimensionGrabberItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.Registries;
@@ -26,11 +28,13 @@ public class InvasionMod implements ModInitializer {
     public static final Item DIMENSION_GRABBER =
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "dimension_grabber"),
                     new DimensionGrabberItem(new FabricItemSettings()));
-
     public static final Item CHUNK_SWITCHER =
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chunk_switcher"),
                     new Item(new FabricItemSettings()));
 
+    public static final StatusEffect PHANTOM =
+            Registry.register(Registries.STATUS_EFFECT, new Identifier(MOD_ID, "phantom"),
+                    new PhantomStatusEffect());
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.

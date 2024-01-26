@@ -1,6 +1,7 @@
 package com.invasionmod.item;
 
 import com.invasionmod.DimensionManager;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -18,6 +19,7 @@ import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 import java.util.UUID;
 
 import static com.invasionmod.InvasionMod.LOGGER;
+import static com.invasionmod.InvasionMod.PHANTOM;
 import static com.invasionmod.util.Nbt.getPlayerUuid;
 import static com.invasionmod.util.Nbt.hasNbtPlayerUuid;
 
@@ -84,6 +86,8 @@ public class DimensionGrabberItem extends Item {
                 playerEntity.getZ(),
                 playerEntity.getYaw(),
                 playerEntity.getPitch());
+
+        playerEntity.addStatusEffect(new StatusEffectInstance(PHANTOM, 20*5));
 
         playerEntity.getItemCooldownManager().set(this, 20);
 
