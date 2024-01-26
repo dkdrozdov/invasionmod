@@ -5,6 +5,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.dimension.DimensionTypes;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Final;
@@ -33,6 +34,12 @@ public abstract class LivingEntityMixin {
         MinecraftServer server = livingEntity.getServer();
 
         if (livingEntity instanceof ServerPlayerEntity serverPlayerEntity) {
+            if (serverPlayerEntity.getWorld().getDimensionKey() != DimensionTypes.OVERWORLD) {
+                LOGGER.info("PhantomStatusEffect is removed from player %s with UUID %s, and since they appeared in neutral dimension their dimension is kept unchanged."
+                        .formatted(serverPlayerEntity.getName().getString(), serverPlayerEntity.getUuidAsString()));
+                return;
+            }
+
             RuntimeWorldHandle destinationWorldHandle = DimensionManager.getPlayerWorldHandle(serverPlayerEntity.getUuidAsString(), server);
 
             serverPlayerEntity.teleport(destinationWorldHandle.asWorld(),

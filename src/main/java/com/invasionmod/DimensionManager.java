@@ -6,6 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionTypes;
 import xyz.nucleoid.fantasy.Fantasy;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
@@ -19,7 +20,7 @@ public class DimensionManager {
         ServerWorld overWorld = server.getOverworld();
 
         RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
-                .setDimensionType(overWorld.getDimensionKey())
+                .setDimensionType(DimensionTypes.OVERWORLD)
                 .setDifficulty(overWorld.getDifficulty())
                 .setGenerator(overWorld.getChunkManager().getChunkGenerator())
                 .setSeed(overWorld.getSeed())

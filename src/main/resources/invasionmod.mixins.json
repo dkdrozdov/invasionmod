@@ -3,10 +3,13 @@
   "package": "com.invasionmod.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "AbstractFireBlockMixin",
+    "EntityMixin",
     "LivingEntityMixin",
     "PlayerEntityMixin",
     "PlayerManagerMixin",
-    "ServerPlayerEntityMixin"
+    "ServerPlayerEntityMixin",
+    "ServerWorldMixin"
   ],
   "injectors": {
     "defaultRequire": 1
