@@ -5,6 +5,8 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionTypes;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Debug;
@@ -14,6 +16,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
 import static com.invasionmod.InvasionMod.PHANTOM;
@@ -34,32 +37,46 @@ public abstract class LivingEntityMixin {
         MinecraftServer server = livingEntity.getServer();
 
         if (livingEntity instanceof ServerPlayerEntity serverPlayerEntity) {
-            if (serverPlayerEntity.getWorld().getDimensionKey() != DimensionTypes.OVERWORLD) {
+            World currentWorld = serverPlayerEntity.getWorld();
+            String playerUUID = serverPlayerEntity.getUuidAsString();
+
+            if (currentWorld.getDimensionKey() != DimensionTypes.OVERWORLD) {
                 LOGGER.info("PhantomStatusEffect is removed from player %s with UUID %s, and since they appeared in neutral dimension their dimension is kept unchanged."
-                        .formatted(serverPlayerEntity.getName().getString(), serverPlayerEntity.getUuidAsString()));
+                        .formatted(serverPlayerEntity.getName().getString(), playerUUID));
                 return;
             }
+            RuntimeWorldHandle playerWorldHandle = DimensionManager.getPlayerWorldHandle(playerUUID, server);
+            ServerWorld playerWorld = playerWorldHandle.asWorld();
 
-            RuntimeWorldHandle destinationWorldHandle = DimensionManager.getPlayerWorldHandle(serverPlayerEntity.getUuidAsString(), server);
+            if (currentWorld == playerWorld) {
+                LOGGER.info("PhantomStatusEffect is removed from player %s with UUID %s, and since they already in their dimension, the dimension is kept unchanged."
+                        .formatted(serverPlayerEntity.getName().getString(), playerUUID));
+                return;
+            }
+            double playerX = serverPlayerEntity.getX();
+            double playerY = serverPlayerEntity.getY();
+            double playerZ = serverPlayerEntity.getZ();
 
-            serverPlayerEntity.teleport(destinationWorldHandle.asWorld(),
-                    serverPlayerEntity.getX(),
-                    serverPlayerEntity.getY(),
-                    serverPlayerEntity.getZ(),
+            serverPlayerEntity.teleport(playerWorld,
+                    playerX,
+                    playerY,
+                    playerZ,
                     serverPlayerEntity.getYaw(),
                     serverPlayerEntity.getPitch());
 
             LOGGER.info("PhantomStatusEffect is removed from player %s with UUID %s, and they are teleported to their world %s at X:%s, Y:%s, Z:%s."
                     .formatted(serverPlayerEntity.getName().getString(),
-                            serverPlayerEntity.getUuidAsString(),
-                            DimensionManager.getPlayerWorldRegistry(serverPlayerEntity.getUuidAsString()).toString(),
-                            serverPlayerEntity.getX(),
-                            serverPlayerEntity.getY(),
-                            serverPlayerEntity.getZ()));
+                            playerUUID,
+                            DimensionManager.getPlayerWorldRegistry(playerUUID).toString(),
+                            playerX,
+                            playerY,
+                            playerZ));
         }
-
-
     }
 
+    @Inject(at = @At(value = "RETURN", ordinal = 1), method = "canTarget(Lnet/minecraft/entity/LivingEntity;)Z", cancellable = true)
+    private void canTargetInject(LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
+        cir.setReturnValue(cir.getReturnValue() && !target.hasStatusEffect(PHANTOM));
+    }
 }
   

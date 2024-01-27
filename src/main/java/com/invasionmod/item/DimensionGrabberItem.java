@@ -2,6 +2,7 @@ package com.invasionmod.item;
 
 import com.invasionmod.DimensionManager;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -60,7 +61,7 @@ public class DimensionGrabberItem extends Item {
 
         String targetUuid = getPlayerUuid(itemStack);
 
-        if (world.getServer().getPlayerManager().getPlayer(UUID.fromString(targetUuid)) == null){
+        if (world.getServer().getPlayerManager().getPlayer(UUID.fromString(targetUuid)) == null) {
             LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
                     " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but target player is offline.");
@@ -80,14 +81,26 @@ public class DimensionGrabberItem extends Item {
         playUseSound(world, playerEntity);
         addUseParticles(world, playerEntity);
 
-        ((ServerPlayerEntity)playerEntity).teleport(destinationWorldHandle.asWorld(),
+        ((ServerPlayerEntity) playerEntity).teleport(destinationWorldHandle.asWorld(),
                 playerEntity.getX(),
                 playerEntity.getY(),
                 playerEntity.getZ(),
                 playerEntity.getYaw(),
                 playerEntity.getPitch());
 
-        playerEntity.addStatusEffect(new StatusEffectInstance(PHANTOM, 20*5));
+        playerEntity.addStatusEffect(new StatusEffectInstance(PHANTOM,
+                20 * 60 * 5,
+                0,
+                true,
+                true,
+                true));
+
+        playerEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE,
+                20 * 60 * 10,
+                1,
+                false,
+                false,
+                false));
 
         playerEntity.getItemCooldownManager().set(this, 20);
 

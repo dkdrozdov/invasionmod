@@ -1,5 +1,6 @@
 package com.invasionmod.mixin;
 
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import org.spongepowered.asm.mixin.Debug;
@@ -33,5 +34,6 @@ public abstract class ServerWorldMixin {
                         serverWorld.getRegistryKey().getValue()));
 
         player.removeStatusEffect(PHANTOM);
+        player.removeStatusEffect(StatusEffects.MINING_FATIGUE);
     }
 }

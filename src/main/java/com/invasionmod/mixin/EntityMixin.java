@@ -25,5 +25,6 @@ public abstract class EntityMixin {
 
         return original;
     }
+
 }
   

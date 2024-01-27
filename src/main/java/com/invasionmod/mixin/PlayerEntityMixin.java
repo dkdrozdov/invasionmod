@@ -69,7 +69,7 @@ public abstract class PlayerEntityMixin {
             playerEntityWorld.playSound(null, targetEntity.getX(), targetEntity.getY(), targetEntity.getZ(),
                     SoundEvents.BLOCK_END_PORTAL_FRAME_FILL, SoundCategory.PLAYERS);
 
-            if(targetEntityWorld != playerEntityWorld)
+            if (targetEntityWorld != playerEntityWorld)
                 targetEntityWorld.playSound(null, targetEntity.getX(), targetEntity.getY(), targetEntity.getZ(),
                         SoundEvents.BLOCK_END_PORTAL_FRAME_FILL, SoundCategory.PLAYERS);
 
@@ -77,6 +77,5 @@ public abstract class PlayerEntityMixin {
             cir.cancel();
         }
     }
-
 }
   
