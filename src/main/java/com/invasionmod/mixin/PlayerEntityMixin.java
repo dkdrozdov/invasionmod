@@ -40,8 +40,8 @@ public abstract class PlayerEntityMixin {
         ItemStack itemStack = playerEntity.getStackInHand(hand);
 
         LOGGER.info(" player " + playerEntity.getUuidAsString() + " clicked with " +
-                playerEntity.getStackInHand(hand).getItem().getName().getString() + " on " +
-                targetEntity.getName().getString() + " of type " + getClass() + ".");
+                itemStack.getItem().getName().getString() + " on " +
+                targetEntity.getName().getString() + " of type " + targetEntity.getClass() + ".");
 
         if (targetEntity instanceof PlayerEntity targetPlayer && itemStack.isOf(DIMENSION_GRABBER)) {
             if (Nbt.hasNbtPlayerUuid(itemStack)) {

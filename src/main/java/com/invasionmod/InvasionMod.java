@@ -11,6 +11,12 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.CampfireBlock;
+import net.minecraft.block.pattern.BlockPattern;
+import net.minecraft.block.pattern.BlockPatternBuilder;
+import net.minecraft.block.pattern.CachedBlockPosition;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.CreeperEntity;
@@ -19,6 +25,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.predicate.block.BlockStatePredicate;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.tag.BlockTags;
@@ -28,6 +35,8 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.function.Predicate;
 
 public class InvasionMod implements ModInitializer {
     // This logger is used to write text to the console and the log file.
@@ -51,6 +60,8 @@ public class InvasionMod implements ModInitializer {
             Registry.register(Registries.STATUS_EFFECT, new Identifier(MOD_ID, "phantom"),
                     new PhantomStatusEffect());
 
+    public static BlockPattern portalPattern = null;
+private static final Predicate<BlockState> IS_LIT_SOUL_CAMPFIRE = state -> state!=null && state.isOf(Blocks.SOUL_CAMPFIRE) && state.get(CampfireBlock.LIT);
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
@@ -65,6 +76,18 @@ public class InvasionMod implements ModInitializer {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
                 .register(content -> content.add(CHUNK_SWITCHER));
 
+        if (portalPattern == null) {
+            portalPattern = BlockPatternBuilder
+                    .start()
+                    .aisle("CAC", "HAH", "QAQ", "QAQ", "QAQ", "AAA")
+                    .aisle("AAA", "AAA", "AAA", "AAA", "AAA", "AAA")
+                    .aisle("CAC", "HAH", "QAQ", "QAQ", "QAQ", "AAA")
+                    .where('C', CachedBlockPosition.matchesBlockState(IS_LIT_SOUL_CAMPFIRE))
+                    .where('H', CachedBlockPosition.matchesBlockState(BlockStatePredicate.forBlock(Blocks.HAY_BLOCK)))
+                    .where('Q', CachedBlockPosition.matchesBlockState(BlockStatePredicate.forBlock(Blocks.QUARTZ_BRICKS)))
+                    .where('A', CachedBlockPosition.matchesBlockState(BlockStatePredicate.ANY))
+                    .build();
+        }
 
         // block right-clicking restrictions
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) ->

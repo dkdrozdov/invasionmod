@@ -1,28 +1,40 @@
 package com.invasionmod.item;
 
 import com.invasionmod.DimensionManager;
+import com.invasionmod.InvasionMod;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUsageContext;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static com.invasionmod.InvasionMod.LOGGER;
 import static com.invasionmod.InvasionMod.PHANTOM;
 import static com.invasionmod.util.Nbt.getPlayerUuid;
 import static com.invasionmod.util.Nbt.hasNbtPlayerUuid;
+import static net.minecraft.block.Blocks.*;
 
 public class DimensionGrabberItem extends Item {
 
@@ -44,19 +56,48 @@ public class DimensionGrabberItem extends Item {
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity playerEntity, Hand hand) {
+    public ActionResult useOnBlock(ItemUsageContext context) {
+        World world = context.getWorld();
+
+        if (!world.isClient) {
+            PlayerEntity player = context.getPlayer();
+
+            if (player == null) return ActionResult.PASS;
+
+            ItemStack itemStack = context.getStack();
+            ServerWorld serverWorld = (ServerWorld) world;
+            Hand hand = context.getHand();
+
+            if (!hasNbtPlayerUuid(itemStack)) {
+                LOGGER.info("Player %s with UUID %s tried to teleport via DimensionGrabberItem, but the destination address is empty."
+                        .formatted(player.getName().getString(), player.getUuidAsString()));
+                player.sendMessage(Text.of("You have to choose target player first!"), true);
+                return ActionResult.FAIL;
+            }
+
+            BlockPattern.Result result = InvasionMod.portalPattern.searchAround(serverWorld, context.getBlockPos());
+
+            if (result == null || result.getUp() != Direction.UP) {
+                player.sendMessage(Text.of("You need a valid portal to teleport!"), true);
+
+                return ActionResult.FAIL;
+            }
+
+            LOGGER.info(result.toString());
+
+            return teleport(world, player, hand, result).getResult();
+        }
+        return ActionResult.PASS;
+    }
+
+
+    public TypedActionResult<ItemStack> teleport(World world, PlayerEntity playerEntity, Hand hand, BlockPattern.Result validPortalMatch) {
         if (world.isClient) return TypedActionResult.pass(playerEntity.getStackInHand(hand));
 
         MinecraftServer server = world.getServer();
         if (server == null) return TypedActionResult.pass(playerEntity.getStackInHand(hand));
 
         ItemStack itemStack = playerEntity.getStackInHand(hand);
-        if (!hasNbtPlayerUuid(itemStack)) {
-            LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
-                    " tried to teleport via DimensionGrabberItem, but the destination address is empty.");
-            playerEntity.sendMessage(Text.of("You have to choose target player first!"), true);
-            return TypedActionResult.fail(playerEntity.getStackInHand(hand));
-        }
 
 
         String targetUuid = getPlayerUuid(itemStack);
@@ -81,13 +122,72 @@ public class DimensionGrabberItem extends Item {
         playUseSound(world, playerEntity);
         addUseParticles(world, playerEntity);
 
+        BlockPos portalCenter = getOrCreatePortal(destinationWorldHandle.asWorld(), validPortalMatch);
+
         ((ServerPlayerEntity) playerEntity).teleport(destinationWorldHandle.asWorld(),
-                playerEntity.getX(),
-                playerEntity.getY(),
-                playerEntity.getZ(),
+                portalCenter.getX(),
+                portalCenter.getY(),
+                portalCenter.getZ(),
                 playerEntity.getYaw(),
                 playerEntity.getPitch());
 
+        addPhantomStatusEffects(playerEntity);
+        playerEntity.getItemCooldownManager().set(this, 20);
+
+        return TypedActionResult.success(playerEntity.getStackInHand(hand));
+    }
+
+    private BlockPos getOrCreatePortal(ServerWorld world, BlockPattern.Result portalMatch) {
+        BlockPattern.Result targetWorldPortalMatch = InvasionMod.portalPattern.searchAround(world, portalMatch.getFrontTopLeft());
+
+        Direction forwards = portalMatch.getForwards();
+        Direction left = forwards.rotateYCounterclockwise();
+        BlockPos portalCenter = portalMatch
+                .getFrontTopLeft()
+                .offset(forwards, 1)
+                .offset(left.getOpposite(), 1)
+                .offset(Direction.DOWN, 4);
+        LOGGER.info(("front top left: %s; " +
+                "1 forwards: %s; " +
+                "1 right: %s; " +
+                "4 down: %s")
+                .formatted(portalMatch.getFrontTopLeft(),
+                        portalMatch.getFrontTopLeft().offset(forwards.getOpposite(), 1),
+                        portalMatch.getFrontTopLeft().offset(forwards.getOpposite(), 1).offset(left.getOpposite(), 1),
+                        portalMatch.getFrontTopLeft().offset(forwards.getOpposite(), 1).offset(left.getOpposite(), 1).offset(Direction.DOWN, 4))
+        );
+
+        if (targetWorldPortalMatch == null || targetWorldPortalMatch.getUp() != Direction.UP) {
+            List<BlockPos> columnOrigins = List.of(
+                    portalCenter.west().north(),
+                    portalCenter.east().north(),
+                    portalCenter.west().south(),
+                    portalCenter.east().south());
+            List<BlockState> columnBlockStates = List.of(
+                    QUARTZ_BRICKS.getDefaultState(),
+                    QUARTZ_BRICKS.getDefaultState(),
+                    QUARTZ_BRICKS.getDefaultState(),
+                    HAY_BLOCK.getDefaultState(),
+                    SOUL_CAMPFIRE.getDefaultState());
+
+            for (BlockPos columnOrigin : columnOrigins) {
+                BlockPos blockPos = columnOrigin;
+
+                for (BlockState blockState : columnBlockStates) {
+                    if (canPlacePortalBlock.test(world.getBlockState(blockPos)))
+                        world.setBlockState(blockPos, blockState);
+
+                    blockPos = blockPos.up();
+                }
+            }
+        }
+
+        return portalCenter;
+    }
+
+    private final Predicate<BlockState> canPlacePortalBlock = blockState -> blockState.isAir() || blockState.isOf(Blocks.WATER);
+
+    private static void addPhantomStatusEffects(PlayerEntity playerEntity) {
         playerEntity.addStatusEffect(new StatusEffectInstance(PHANTOM,
                 20 * 60 * 5,
                 0,
@@ -101,10 +201,6 @@ public class DimensionGrabberItem extends Item {
                 false,
                 false,
                 false));
-
-        playerEntity.getItemCooldownManager().set(this, 20);
-
-        return TypedActionResult.success(playerEntity.getStackInHand(hand));
     }
 }
 
