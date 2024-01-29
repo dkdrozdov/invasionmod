@@ -11,25 +11,18 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Debug;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import static com.invasionmod.InvasionMod.DIMENSION_GRABBER;
+import static com.invasionmod.InvasionMod.LOGGER;
 
 @Debug(export = true)
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin {
-
-    @Shadow
-    @Final
-    private static Logger LOGGER;
-
     /**
      * @param targetEntity The entity that PlayerEntity interacts with.
      * @param hand         The hand that holds the item that PlayerEntity has used on @entity

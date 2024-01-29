@@ -1,5 +1,6 @@
 package com.invasionmod;
 
+import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
 import com.invasionmod.item.DimensionGrabberItem;
 import net.fabricmc.api.ModInitializer;
@@ -61,7 +62,8 @@ public class InvasionMod implements ModInitializer {
                     new PhantomStatusEffect());
 
     public static BlockPattern portalPattern = null;
-private static final Predicate<BlockState> IS_LIT_SOUL_CAMPFIRE = state -> state!=null && state.isOf(Blocks.SOUL_CAMPFIRE) && state.get(CampfireBlock.LIT);
+    private static final Predicate<BlockState> IS_LIT_SOUL_CAMPFIRE = state -> state != null && state.isOf(Blocks.SOUL_CAMPFIRE) && state.get(CampfireBlock.LIT);
+
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
@@ -163,9 +165,9 @@ private static final Predicate<BlockState> IS_LIT_SOUL_CAMPFIRE = state -> state
         // remove phantom status when player joins and spawns at their world
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
-            if (player.hasStatusEffect(PHANTOM)
-                    && DimensionManager.getPlayerWorldHandle(player.getUuidAsString(), player.server).asWorld()
-                    == player.getWorld()) {
+            ServerPlayerEntityAccess serverPlayerEntityAccess = (ServerPlayerEntityAccess) player;
+
+            if (player.hasStatusEffect(PHANTOM) && serverPlayerEntityAccess.invasionmod$getNeedReturnLoot()) {
                 player.removeStatusEffect(PHANTOM);
                 player.removeStatusEffect(StatusEffects.MINING_FATIGUE);
             }

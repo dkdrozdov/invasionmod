@@ -14,6 +14,22 @@ import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 import static com.invasionmod.InvasionMod.MOD_ID;
 
 public class DimensionManager {
+
+    public static RuntimeWorldHandle getPlayerWorldHandle(Identifier id, MinecraftServer server) {
+        Fantasy fantasy = Fantasy.get(server);
+        ServerWorld overWorld = server.getOverworld();
+
+        RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+                .setDimensionType(DimensionTypes.OVERWORLD)
+                .setDifficulty(overWorld.getDifficulty())
+                .setGenerator(overWorld.getChunkManager().getChunkGenerator())
+                .setSeed(overWorld.getSeed())
+                .setShouldTickTime(true);
+
+        return fantasy.getOrOpenPersistentWorld(
+                id, worldConfig);
+    }
+
     public static RuntimeWorldHandle getPlayerWorldHandle(String playerUuid, MinecraftServer server) {
         Identifier worldId = new Identifier(MOD_ID, playerUuid + "-world");
         Fantasy fantasy = Fantasy.get(server);

@@ -8,6 +8,7 @@ import static com.invasionmod.InvasionMod.MOD_ID;
 public class Nbt {
     private static final String PLAYER_UUID = "player_uuid";
     private static final String PLAYER_NAME = "player_name";
+    private static final String IS_OWNED = "is_owned";
 
     static public NbtCompound createNbtIfAbsent(ItemStack stack) {
         if (!stack.hasNbt()) {
@@ -66,9 +67,32 @@ public class Nbt {
         setNbt(stack, PLAYER_NAME, playerName);
     }
 
+
+    static public void setIsOwned(ItemStack stack, boolean isOwned) {
+        if (isOwned)
+            setNbt(stack, IS_OWNED, "true");
+        else
+            clearNbt(stack, IS_OWNED);
+    }
+
+    static private void clearNbt(ItemStack stack, String nbtName) {
+        stack.getOrCreateSubNbt(MOD_ID).remove(nbtName);
+    }
+
+    static public void clearOwned(ItemStack stack) {
+        clearNbt(stack, IS_OWNED);
+    }
+
+    static public boolean getIsOwned(ItemStack stack) {
+        NbtCompound nbt = createNbtIfAbsent(stack);
+
+        return nbt.contains(IS_OWNED);
+    }
+
     static public boolean hasNbtPlayerUuid(ItemStack stack) {
         NbtCompound nbt = createNbtIfAbsent(stack);
 
         return nbt.contains(PLAYER_UUID);
     }
+
 }

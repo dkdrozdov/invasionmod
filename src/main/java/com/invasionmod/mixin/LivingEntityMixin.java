@@ -1,6 +1,7 @@
 package com.invasionmod.mixin;
 
 import com.invasionmod.DimensionManager;
+import com.invasionmod.entity.effect.PhantomStatusEffect;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.server.MinecraftServer;
@@ -8,26 +9,21 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionTypes;
-import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Debug;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
+import static com.invasionmod.DimensionManager.getPlayerWorldHandle;
+import static com.invasionmod.InvasionMod.LOGGER;
 import static com.invasionmod.InvasionMod.PHANTOM;
 
 @Debug(export = true)
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
-
-    @Shadow
-    @Final
-    private static Logger LOGGER;
 
     @Inject(at = @At(value = "TAIL"), method = "onStatusEffectRemoved")
     private void onStatusEffectRemovedInject(StatusEffectInstance effect, CallbackInfo ci) {
@@ -45,17 +41,15 @@ public abstract class LivingEntityMixin {
                         .formatted(serverPlayerEntity.getName().getString(), playerUUID));
                 return;
             }
-            RuntimeWorldHandle playerWorldHandle = DimensionManager.getPlayerWorldHandle(playerUUID, server);
+            RuntimeWorldHandle playerWorldHandle = getPlayerWorldHandle(playerUUID, server);
             ServerWorld playerWorld = playerWorldHandle.asWorld();
 
-            if (currentWorld == playerWorld) {
-                LOGGER.info("PhantomStatusEffect is removed from player %s with UUID %s, and since they already in their dimension, the dimension is kept unchanged."
-                        .formatted(serverPlayerEntity.getName().getString(), playerUUID));
-                return;
-            }
             double playerX = serverPlayerEntity.getX();
             double playerY = serverPlayerEntity.getY();
             double playerZ = serverPlayerEntity.getZ();
+
+            // manage loot
+            PhantomStatusEffect.manageLoot(serverPlayerEntity);
 
             serverPlayerEntity.teleport(playerWorld,
                     playerX,

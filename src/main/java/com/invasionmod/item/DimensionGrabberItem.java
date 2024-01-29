@@ -23,10 +23,12 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -102,6 +104,14 @@ public class DimensionGrabberItem extends Item {
 
         String targetUuid = getPlayerUuid(itemStack);
 
+        if (Objects.equals(targetUuid, playerEntity.getUuidAsString())) {
+            LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
+                    " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
+                    " via DimensionGrabberItem, but target player is themselves.");
+            playerEntity.sendMessage(Text.of("You are the target player!"), true);
+            return TypedActionResult.fail(playerEntity.getStackInHand(hand));
+        }
+
         if (world.getServer().getPlayerManager().getPlayer(UUID.fromString(targetUuid)) == null) {
             LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
                     " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
@@ -122,7 +132,7 @@ public class DimensionGrabberItem extends Item {
         playUseSound(world, playerEntity);
         addUseParticles(world, playerEntity);
 
-        BlockPos portalCenter = getOrCreatePortal(destinationWorldHandle.asWorld(), validPortalMatch);
+        Vec3d portalCenter = getOrCreatePortal(destinationWorldHandle.asWorld(), validPortalMatch);
 
         ((ServerPlayerEntity) playerEntity).teleport(destinationWorldHandle.asWorld(),
                 portalCenter.getX(),
@@ -137,25 +147,16 @@ public class DimensionGrabberItem extends Item {
         return TypedActionResult.success(playerEntity.getStackInHand(hand));
     }
 
-    private BlockPos getOrCreatePortal(ServerWorld world, BlockPattern.Result portalMatch) {
+    private Vec3d getOrCreatePortal(ServerWorld world, BlockPattern.Result portalMatch) {
         BlockPattern.Result targetWorldPortalMatch = InvasionMod.portalPattern.searchAround(world, portalMatch.getFrontTopLeft());
 
-        Direction forwards = portalMatch.getForwards();
+        Direction forwards = (targetWorldPortalMatch == null ? portalMatch : targetWorldPortalMatch).getForwards();
         Direction left = forwards.rotateYCounterclockwise();
-        BlockPos portalCenter = portalMatch
+        BlockPos portalCenter = (targetWorldPortalMatch == null ? portalMatch : targetWorldPortalMatch)
                 .getFrontTopLeft()
                 .offset(forwards, 1)
                 .offset(left.getOpposite(), 1)
                 .offset(Direction.DOWN, 4);
-        LOGGER.info(("front top left: %s; " +
-                "1 forwards: %s; " +
-                "1 right: %s; " +
-                "4 down: %s")
-                .formatted(portalMatch.getFrontTopLeft(),
-                        portalMatch.getFrontTopLeft().offset(forwards.getOpposite(), 1),
-                        portalMatch.getFrontTopLeft().offset(forwards.getOpposite(), 1).offset(left.getOpposite(), 1),
-                        portalMatch.getFrontTopLeft().offset(forwards.getOpposite(), 1).offset(left.getOpposite(), 1).offset(Direction.DOWN, 4))
-        );
 
         if (targetWorldPortalMatch == null || targetWorldPortalMatch.getUp() != Direction.UP) {
             List<BlockPos> columnOrigins = List.of(
@@ -182,18 +183,20 @@ public class DimensionGrabberItem extends Item {
             }
         }
 
-        return portalCenter;
+        return portalCenter.toCenterPos();
     }
 
     private final Predicate<BlockState> canPlacePortalBlock = blockState -> blockState.isAir() || blockState.isOf(Blocks.WATER);
 
     private static void addPhantomStatusEffects(PlayerEntity playerEntity) {
-        playerEntity.addStatusEffect(new StatusEffectInstance(PHANTOM,
+        StatusEffectInstance statusEffectInstance = new StatusEffectInstance(PHANTOM,
                 20 * 60 * 5,
                 0,
                 true,
                 true,
-                true));
+                true);
+
+        playerEntity.addStatusEffect(statusEffectInstance);
 
         playerEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE,
                 20 * 60 * 10,

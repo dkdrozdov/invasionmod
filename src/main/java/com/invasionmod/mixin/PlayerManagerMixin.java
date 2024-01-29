@@ -1,7 +1,9 @@
 package com.invasionmod.mixin;
 
 import com.invasionmod.DimensionManager;
+import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtOps;
@@ -12,6 +14,7 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Debug;
@@ -22,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
 import static com.invasionmod.InvasionMod.LOGGER;
+import static com.invasionmod.InvasionMod.PHANTOM;
 
 @Debug(export = true)
 @Mixin(PlayerManager.class)
@@ -52,9 +56,20 @@ public abstract class PlayerManagerMixin {
     }
 
     @ModifyExpressionValue(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "onPlayerConnect")
-    private ServerWorld onPlayerConnectUnknownDimensionInject(ServerWorld original, ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData) {
+    private ServerWorld onPlayerConnectUnknownDimensionInject(ServerWorld original, ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, @Local RegistryKey<World> registryKey) {
+        LOGGER.info("Detected " + player.getName().getString() + " tries to spawn on unloaded world.");
+
         RuntimeWorldHandle worldHandle = DimensionManager.getPlayerWorldHandle(player.getUuidAsString(), server);
-        LOGGER.info("Detected " + player.getUuidAsString() + " tries to spawn on unloaded world. Changing it to their world: " + worldHandle.getRegistryKey().toString());
+        LOGGER.info("Changing spawn to player's own world: " + worldHandle.getRegistryKey().toString());
+
+        if (player.hasStatusEffect(PHANTOM)) {
+            Identifier unloadedWorldId = registryKey.getValue();
+
+            LOGGER.info("Player " + player.getName().getString() + " is a phantom! Tagging them with needReturnLoot.");
+
+            ((ServerPlayerEntityAccess) player).invasionmod$setNeedReturnLoot(true);
+            ((ServerPlayerEntityAccess) player).invasionmod$setReturnLootWorld(unloadedWorldId);
+        }
 
         return worldHandle.asWorld();
     }

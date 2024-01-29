@@ -28,7 +28,7 @@ public abstract class ServerWorldMixin {
     @Inject(at = @At(value = "TAIL"), method = "onPlayerChangeDimension")
     private void onPlayerChangeDimensionInject(ServerPlayerEntity player, CallbackInfo ci) {
         ServerWorld serverWorld = (ServerWorld) ((Object) this);
-        LOGGER.info("Player %s with UUID %s changed dimension to world %s"
+        LOGGER.info("Player %s with UUID %s changed dimension to world %s."
                 .formatted(player.getName().toString(),
                         player.getUuidAsString(),
                         serverWorld.getRegistryKey().getValue()));
