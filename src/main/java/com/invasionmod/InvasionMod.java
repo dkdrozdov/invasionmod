@@ -64,7 +64,7 @@ public class InvasionMod implements ModInitializer {
 
     public static final Item DIMENSION_GRABBER =
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "dimension_grabber"),
-                    new DimensionGrabberItem(new FabricItemSettings()));
+                    new DimensionGrabberItem(new FabricItemSettings().maxCount(1)));
     public static final Item CHUNK_SWITCHER =
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chunk_switcher"),
                     new Item(new FabricItemSettings()));
@@ -201,7 +201,7 @@ public class InvasionMod implements ModInitializer {
 
         ServerChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> GhostManager.onChunkUnload());
 
-        ServerPlayerEntityCallback.ON_ENTER_CHUNK.register(GhostManager::onPlayerChangedChunk);
+        ServerPlayerEntityCallback.ON_ENTER_CHUNK.register(GhostManager::updateGhosts);
 
         ServerPlayNetworking.registerGlobalReceiver(IS_RESPAWN_ALLOWED_REQUEST_PACKET_ID, (server, player, handler, buf, responseSender) -> server.execute(() -> {
             if (player.getWorld().getPlayers().stream().noneMatch(playerEntity -> playerEntity.hasStatusEffect(PHANTOM)))

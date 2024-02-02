@@ -24,6 +24,7 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
@@ -39,6 +40,8 @@ import static com.invasionmod.util.Nbt.hasNbtPlayerUuid;
 import static net.minecraft.block.Blocks.*;
 
 public class DimensionGrabberItem extends Item {
+
+    private final static int phantomDurationMinutes = 3;
 
     public DimensionGrabberItem(Settings settings) {
         super(settings);
@@ -87,66 +90,86 @@ public class DimensionGrabberItem extends Item {
 
             LOGGER.info(result.toString());
 
-            return teleport(world, player, hand, result).getResult();
+            return invade(world, player, hand, result).getResult();
         }
         return ActionResult.PASS;
     }
 
 
-    public TypedActionResult<ItemStack> teleport(World world, PlayerEntity playerEntity, Hand hand, BlockPattern.Result validPortalMatch) {
-        if (world.isClient) return TypedActionResult.pass(playerEntity.getStackInHand(hand));
+    public TypedActionResult<ItemStack> invade(World world, PlayerEntity invaderPlayer, Hand hand, BlockPattern.Result validPortalMatch) {
+        if (world.isClient) return TypedActionResult.pass(invaderPlayer.getStackInHand(hand));
 
         MinecraftServer server = world.getServer();
-        if (server == null) return TypedActionResult.pass(playerEntity.getStackInHand(hand));
+        if (server == null) return TypedActionResult.pass(invaderPlayer.getStackInHand(hand));
 
-        ItemStack itemStack = playerEntity.getStackInHand(hand);
+        ItemStack itemStack = invaderPlayer.getStackInHand(hand);
 
 
         String targetUuid = getPlayerUuid(itemStack);
 
-        if (Objects.equals(targetUuid, playerEntity.getUuidAsString())) {
-            LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
+        if (Objects.equals(targetUuid, invaderPlayer.getUuidAsString())) {
+            LOGGER.info("Player " + invaderPlayer.getName().getString() + " with UUID " + invaderPlayer.getUuidAsString() +
                     " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but target player is themselves.");
-            playerEntity.sendMessage(Text.of("You are the target player!"), true);
-            return TypedActionResult.fail(playerEntity.getStackInHand(hand));
+            invaderPlayer.sendMessage(Text.of("You are the target player!"), true);
+            return TypedActionResult.fail(invaderPlayer.getStackInHand(hand));
         }
 
-        if (world.getServer().getPlayerManager().getPlayer(UUID.fromString(targetUuid)) == null) {
-            LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
+        ServerPlayerEntity targetPlayer = world.getServer().getPlayerManager().getPlayer(UUID.fromString(targetUuid));
+
+        if (targetPlayer == null) {
+            LOGGER.info("Player " + invaderPlayer.getName().getString() + " with UUID " + invaderPlayer.getUuidAsString() +
                     " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but target player is offline.");
-            playerEntity.sendMessage(Text.of("Target player is offline."), true);
-            return TypedActionResult.fail(playerEntity.getStackInHand(hand));
+            invaderPlayer.sendMessage(Text.of("Target player is offline."), true);
+            return TypedActionResult.fail(invaderPlayer.getStackInHand(hand));
         }
 
-        if (world.getRegistryKey() != DimensionManager.getPlayerWorldRegistry(playerEntity.getUuidAsString())) {
-            LOGGER.info("Player " + playerEntity.getName().getString() + " with UUID " + playerEntity.getUuidAsString() +
+        if (!targetPlayer.isAlive()) {
+            LOGGER.info("Player " + invaderPlayer.getName().getString() + " with UUID " + invaderPlayer.getUuidAsString() +
+                    " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
+                    " via DimensionGrabberItem, but target player is dead.");
+            invaderPlayer.sendMessage(Text.of("Target player is dead."), true);
+            return TypedActionResult.fail(invaderPlayer.getStackInHand(hand));
+        }
+
+        if (world.getRegistryKey() != DimensionManager.getPlayerWorldRegistry(invaderPlayer.getUuidAsString())) {
+            LOGGER.info("Player " + invaderPlayer.getName().getString() + " with UUID " + invaderPlayer.getUuidAsString() +
                     " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but the dimension of departure is forbidden: " + world.getRegistryKey().toString());
-            playerEntity.sendMessage(Text.of("You can teleport only from your own world!"), true);
-            return TypedActionResult.fail(playerEntity.getStackInHand(hand));
+            invaderPlayer.sendMessage(Text.of("You can teleport only from your own world!"), true);
+            return TypedActionResult.fail(invaderPlayer.getStackInHand(hand));
         }
 
         RuntimeWorldHandle destinationWorldHandle = DimensionManager.getPlayerWorldHandle(targetUuid, server);
         ServerWorld destinationWorld = destinationWorldHandle.asWorld();
-        playUseSound(world, playerEntity);
-        playUseSound(destinationWorld, playerEntity);
-        addUseParticles(world, playerEntity);
+        playUseSound(world, invaderPlayer);
+        playUseSound(destinationWorld, invaderPlayer);
+        addUseParticles(world, invaderPlayer);
+        setInvadingWeather(destinationWorld);
 
         Vec3d portalCenter = getOrCreatePortal(destinationWorld, validPortalMatch);
 
-        ((ServerPlayerEntity) playerEntity).teleport(destinationWorld,
+        ((ServerPlayerEntity) invaderPlayer).teleport(destinationWorld,
                 portalCenter.getX(),
                 portalCenter.getY(),
                 portalCenter.getZ(),
-                playerEntity.getYaw(),
-                playerEntity.getPitch());
+                invaderPlayer.getYaw(),
+                invaderPlayer.getPitch());
 
-        addPhantomStatusEffects(playerEntity);
-        playerEntity.getItemCooldownManager().set(this, 20);
+        addPhantomStatusEffects(invaderPlayer);
+        invaderPlayer.getItemCooldownManager().set(this, 20);
 
-        return TypedActionResult.success(playerEntity.getStackInHand(hand));
+        return TypedActionResult.success(invaderPlayer.getStackInHand(hand));
+    }
+
+    private void setInvadingWeather(ServerWorld destinationWorld) {
+        int random = Random.create().nextBetween(0, 100);
+        if (random <= 2)
+            destinationWorld.setWeather(0, 60 * phantomDurationMinutes, false, true);
+        else
+            destinationWorld.setWeather(0, 60 * phantomDurationMinutes, true, false);
+
     }
 
     private Vec3d getOrCreatePortal(ServerWorld world, BlockPattern.Result portalMatch) {
@@ -192,7 +215,7 @@ public class DimensionGrabberItem extends Item {
 
     private static void addPhantomStatusEffects(PlayerEntity playerEntity) {
         StatusEffectInstance statusEffectInstance = new StatusEffectInstance(PHANTOM,
-                20 * 60 * 5,
+                20 * 60 * phantomDurationMinutes,
                 0,
                 true,
                 true,
@@ -201,7 +224,7 @@ public class DimensionGrabberItem extends Item {
         playerEntity.addStatusEffect(statusEffectInstance);
 
         playerEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.MINING_FATIGUE,
-                20 * 60 * 10,
+                20 * 60 * phantomDurationMinutes,
                 1,
                 false,
                 false,

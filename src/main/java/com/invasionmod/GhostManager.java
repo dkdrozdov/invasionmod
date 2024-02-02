@@ -72,14 +72,18 @@ public class GhostManager {
     }
 
     public static void onPlayerJoin(ServerPlayerEntity player) {
-        onPlayerChangedChunk(player);
+        updateGhosts(player);
     }
 
 
-    public static void onPlayerChangedChunk(ServerPlayerEntity player) {
+    /**
+     * Spawns ghosts of a player in other dimensions and ghosts of other players in player's current dimension if needed.
+     * Also, despawns expired or unavailable ghosts.
+     */
+    public static void updateGhosts(ServerPlayerEntity player) {
         MinecraftServer server = player.getServer();
 
-        LOGGER.info("Player %s changed chunk: world %s pos %s".formatted(player.getName().getString(), player.getWorld(), player.getPos()));
+//        LOGGER.info("Player %s changed chunk: world %s pos %s".formatted(player.getName().getString(), player.getWorld(), player.getPos()));
         Set<ServerWorld> trackingWorlds = getTrackingWorlds(server, player);
 
         if (trackingWorlds.isEmpty()) return;
@@ -113,9 +117,9 @@ public class GhostManager {
             for (GhostEntity entity : ghostEntities) {
                 if (PlayerLookup.tracking(entity).isEmpty())
                     entity.discard();   // remove ghosts nobody tracks
-                else
-                    LOGGER.info("tried to spawn a ghost but it already exists: client " + world.isClient + ", player " + entity.getPlayer().getName().getString() + ", ghost id: " +
-                            entity.getId() + ", location: " + entity.getBlockPos().toString() + ", inRange 32: " + entity.isInRange(player, 32));
+//                else
+//                    LOGGER.info("tried to spawn a ghost, but it already exists: client " + world.isClient + ", player " + entity.getPlayer().getName().getString() + ", ghost id: " +
+//                            entity.getId() + ", location: " + entity.getBlockPos().toString() + ", inRange 32: " + entity.isInRange(player, 32));
             }
             long count = 0L;
             for (GhostEntity ghostEntity : ghostEntities) {
@@ -130,7 +134,7 @@ public class GhostManager {
         Collection<ServerPlayerEntity> trackingPlayers = PlayerLookup.tracking(world, chunk.getPos());
 
         for (ServerPlayerEntity trackingPlayer : trackingPlayers) {
-            onPlayerChangedChunk(trackingPlayer);
+            updateGhosts(trackingPlayer);
         }
     }
 

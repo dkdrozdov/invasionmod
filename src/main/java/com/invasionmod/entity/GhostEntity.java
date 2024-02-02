@@ -30,10 +30,20 @@ public class GhostEntity extends LivingEntity {
         setNoGravity(true);
         ServerPlayerEntityCallback.ON_PLAYER_SWING_HAND.register(this::onPlayerSwingHand);
         ServerPlayerEntityCallback.ON_PLAYER_DEATH.register(this::onPlayerDeath);
+        setInvisible(true);
+    }
+
+    @Override
+    protected void tickStatusEffects() {
+    }
+
+    @Override
+    public boolean isInvisibleTo(PlayerEntity player) {
+        return false;
     }
 
     private void onPlayerDeath(ServerPlayerEntity serverPlayerEntity) {
-        if (player != null && player == serverPlayerEntity){
+        if (player != null && player == serverPlayerEntity) {
             onDeath(getDamageSources().generic());
         }
     }
@@ -55,7 +65,6 @@ public class GhostEntity extends LivingEntity {
 
     @Override
     public void equipStack(EquipmentSlot slot, ItemStack stack) {
-
     }
 
     private void despawnIfPlayerIsInvalid() {
@@ -79,11 +88,6 @@ public class GhostEntity extends LivingEntity {
 
     @Override
     public void tick() {
-//        if (getEntityWorld().isClient)
-//            LOGGER.info("c: " + getId() + " " + handSwinging);
-//        else
-//            LOGGER.info("s: " + getId() + " " + handSwinging + (player != null ? ("\tp: " + player.handSwinging) : ""));
-
         // despawn ghost if the player in invalid state
 
         despawnIfPlayerIsInvalid();
@@ -91,15 +95,8 @@ public class GhostEntity extends LivingEntity {
         if (!getEntityWorld().isClient && player != null) {
             this.lastVelocity = player.getVelocity();
             copyPositionAndRotation(player);
-
-            // set -> reset -> refresh
             setHeadYaw(player.getHeadYaw());
             setPose(player.getPose());
-//            this.resetPosition();
-//            this.refreshPosition();
-
-//            Objects.requireNonNull(getServer()).getPlayerManager()
-//                    .sendToAll(new EntityPositionS2CPacket(this));
         }
 
         super.tick();

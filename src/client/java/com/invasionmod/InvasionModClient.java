@@ -10,11 +10,10 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.entity.model.EntityModelLayers;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 
-import static com.invasionmod.InvasionMod.GHOST;
 import static com.invasionmod.InvasionMod.ALLOW_RESPAWN_PACKET_ID;
+import static com.invasionmod.InvasionMod.GHOST;
 
 public class InvasionModClient implements ClientModInitializer {
-
     @Override
     public void onInitializeClient() {
         EntityRendererRegistry.register(GHOST, (context) -> new GhostEntityRenderer(context, new PlayerEntityModel<>(

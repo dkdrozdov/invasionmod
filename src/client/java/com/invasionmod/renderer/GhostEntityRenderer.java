@@ -23,8 +23,14 @@ import static com.invasionmod.InvasionMod.MOD_ID;
 
 public class GhostEntityRenderer extends LivingEntityRenderer<GhostEntity, PlayerEntityModel<GhostEntity>> {
 
+    private static final float alphaValue = 0.75F;
+
     public GhostEntityRenderer(EntityRendererFactory.Context context, PlayerEntityModel<GhostEntity> entityModel, float f) {
         super(context, entityModel, f);
+    }
+
+    public float getAlphaValue() {
+        return alphaValue;
     }
 
     @Override
@@ -34,10 +40,8 @@ public class GhostEntityRenderer extends LivingEntityRenderer<GhostEntity, Playe
 
     @Override
     public void render(GhostEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i) {
-
         this.setModelPose(livingEntity);
         super.render(livingEntity, f, g, matrixStack, vertexConsumerProvider, i);
-
     }
 
     public Vec3d getPositionOffset(GhostEntity ghostEntity, float f) {
