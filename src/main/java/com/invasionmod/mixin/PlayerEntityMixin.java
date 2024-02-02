@@ -1,6 +1,7 @@
 package com.invasionmod.mixin;
 
 import com.invasionmod.DimensionManager;
+import com.invasionmod.entity.GhostEntity;
 import com.invasionmod.util.Nbt;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -29,6 +30,7 @@ public abstract class PlayerEntityMixin {
      */
     @Inject(at = @At(value = "HEAD"), method = "interact", cancellable = true)
     private void interactInject(Entity targetEntity, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
+        if (targetEntity.getWorld().isClient) return;
         PlayerEntity playerEntity = ((PlayerEntity) ((Object) this));
         ItemStack itemStack = playerEntity.getStackInHand(hand);
 
@@ -36,7 +38,7 @@ public abstract class PlayerEntityMixin {
                 itemStack.getItem().getName().getString() + " on " +
                 targetEntity.getName().getString() + " of type " + targetEntity.getClass() + ".");
 
-        if (targetEntity instanceof PlayerEntity targetPlayer && itemStack.isOf(DIMENSION_GRABBER)) {
+        if (((targetEntity instanceof PlayerEntity) || (targetEntity instanceof GhostEntity)) && itemStack.isOf(DIMENSION_GRABBER)) {
             if (Nbt.hasNbtPlayerUuid(itemStack)) {
                 LOGGER.info(("Player %s with UUID %s tried to grab dimension of player %s " +
                         "with UUID %s via DimensionGrabberItem, but the itemStack already has destination: %s")
@@ -49,14 +51,30 @@ public abstract class PlayerEntityMixin {
                 return;
             }
 
-            Nbt.setPlayerName(itemStack, targetPlayer.getName().getString());
-            Nbt.setPlayerUuid(itemStack, targetPlayer.getUuidAsString());
+            String playerName;
+            String playerUuid;
+            PlayerEntity targetPlayer = null;
 
-            LOGGER.info("grabbed uuid: " + targetPlayer.getUuidAsString());
+            if (targetEntity instanceof PlayerEntity targetPlayerEntity) targetPlayer = targetPlayerEntity;
+
+            if (targetEntity instanceof GhostEntity ghostEntity) targetPlayer = ghostEntity.getPlayer();
+
+            if (targetPlayer == null) {
+                LOGGER.info("Target player is null! That shouldn't happen.");
+                return;
+            }
+
+            playerName = targetPlayer.getName().getString();
+            playerUuid = targetPlayer.getUuidAsString();
+
+            Nbt.setPlayerName(itemStack, playerName);
+            Nbt.setPlayerUuid(itemStack, playerUuid);
+
+            LOGGER.info("grabbed uuid: " + playerUuid);
 
             playerEntity.getItemCooldownManager().set(itemStack.getItem(), 20);
 
-            World targetEntityWorld = targetEntity.getWorld();
+            World targetEntityWorld = targetPlayer.getWorld();
             World playerEntityWorld = playerEntity.getWorld();
 
             playerEntityWorld.playSound(null, targetEntity.getX(), targetEntity.getY(), targetEntity.getZ(),

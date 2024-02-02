@@ -14,7 +14,9 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.block.BlockState;
@@ -53,6 +55,8 @@ public class InvasionMod implements ModInitializer {
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final String MOD_ID = "invasionmod";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Identifier IS_RESPAWN_ALLOWED_REQUEST_PACKET_ID = new Identifier(MOD_ID, "is_respawn_allowed_request");
+    public static final Identifier ALLOW_RESPAWN_PACKET_ID = new Identifier(MOD_ID, "is_respawn_allowed_answer");
 
     public static final Item TRAVEL_STONE =
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "travel_stone"),
@@ -139,14 +143,6 @@ public class InvasionMod implements ModInitializer {
 
         // entity use restrictions
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            // debug thing
-
-            if(entity instanceof GhostEntity ghostEntity){
-                ghostEntity.setPlayer(player);
-                LOGGER.info("Set ghost entity player to " + player.getName().getString());
-            }
-
-
             ItemStack itemStack = player.getStackInHand(hand);
             Item usedItem = itemStack.getItem();
 
@@ -206,5 +202,10 @@ public class InvasionMod implements ModInitializer {
         ServerChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> GhostManager.onChunkUnload());
 
         ServerPlayerEntityCallback.ON_ENTER_CHUNK.register(GhostManager::onPlayerChangedChunk);
+
+        ServerPlayNetworking.registerGlobalReceiver(IS_RESPAWN_ALLOWED_REQUEST_PACKET_ID, (server, player, handler, buf, responseSender) -> server.execute(() -> {
+            if (player.getWorld().getPlayers().stream().noneMatch(playerEntity -> playerEntity.hasStatusEffect(PHANTOM)))
+                ServerPlayNetworking.send(player, ALLOW_RESPAWN_PACKET_ID, PacketByteBufs.empty());
+        }));
     }
 }

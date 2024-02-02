@@ -131,7 +131,7 @@ public class GhostEntity extends LivingEntity {
 
     public void onPlayerSwingHand(Hand hand, ServerPlayerEntity serverPlayerEntity) {
         if (player != null && serverPlayerEntity == player) {
-            LOGGER.info("Player" + player.getName().getString() + " swing hand. Swinging ghost's hand.");
+//            LOGGER.info("Player" + player.getName().getString() + " swing hand. Swinging ghost's hand.");
 
             swingHand(hand);
         }

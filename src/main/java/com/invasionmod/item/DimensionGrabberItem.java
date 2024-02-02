@@ -129,12 +129,14 @@ public class DimensionGrabberItem extends Item {
         }
 
         RuntimeWorldHandle destinationWorldHandle = DimensionManager.getPlayerWorldHandle(targetUuid, server);
+        ServerWorld destinationWorld = destinationWorldHandle.asWorld();
         playUseSound(world, playerEntity);
+        playUseSound(destinationWorld, playerEntity);
         addUseParticles(world, playerEntity);
 
-        Vec3d portalCenter = getOrCreatePortal(destinationWorldHandle.asWorld(), validPortalMatch);
+        Vec3d portalCenter = getOrCreatePortal(destinationWorld, validPortalMatch);
 
-        ((ServerPlayerEntity) playerEntity).teleport(destinationWorldHandle.asWorld(),
+        ((ServerPlayerEntity) playerEntity).teleport(destinationWorld,
                 portalCenter.getX(),
                 portalCenter.getY(),
                 portalCenter.getZ(),
