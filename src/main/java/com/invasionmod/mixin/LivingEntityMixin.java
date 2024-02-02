@@ -68,9 +68,11 @@ public abstract class LivingEntityMixin {
         }
     }
 
+    // makes aggressive mobs ignore phantoms
     @Inject(at = @At(value = "RETURN", ordinal = 1), method = "canTarget(Lnet/minecraft/entity/LivingEntity;)Z", cancellable = true)
     private void canTargetInject(LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
         cir.setReturnValue(cir.getReturnValue() && !target.hasStatusEffect(PHANTOM));
     }
+
 }
   

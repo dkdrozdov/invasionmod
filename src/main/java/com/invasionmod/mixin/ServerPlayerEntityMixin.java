@@ -3,6 +3,7 @@ package com.invasionmod.mixin;
 import com.google.common.collect.ImmutableList;
 import com.invasionmod.DimensionManager;
 import com.invasionmod.access.ServerPlayerEntityAccess;
+import com.invasionmod.callback.ServerPlayerEntityCallback;
 import com.invasionmod.util.Nbt;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.entity.damage.DamageSource;
@@ -13,8 +14,11 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -34,17 +38,19 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
     public MinecraftServer server;
 
     @Unique
-    boolean invasionmod$NeedReturnLoot;
+    boolean invasionmod$needReturnLoot;
+    @Unique
+    ChunkPos invasionmod$lastChunkPos = null;
 
     @Unique
     Identifier invasionmod$ReturnLootWorld;
 
     public boolean invasionmod$getNeedReturnLoot() {
-        return invasionmod$NeedReturnLoot;
+        return invasionmod$needReturnLoot;
     }
 
     public void invasionmod$setNeedReturnLoot(boolean _needReturnLoot) {
-        invasionmod$NeedReturnLoot = _needReturnLoot;
+        invasionmod$needReturnLoot = _needReturnLoot;
     }
 
     public Identifier invasionmod$getReturnLootWorld() {
@@ -57,17 +63,18 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
 
     @Inject(method = "readCustomDataFromNbt", at = @At("HEAD"))
     private void readReturnLoot(NbtCompound nbt, CallbackInfo ci) {
-        invasionmod$NeedReturnLoot = nbt.getBoolean("needReturnLoot");
+        invasionmod$needReturnLoot = nbt.getBoolean("needReturnLoot");
     }
 
     @Inject(method = "writeCustomDataToNbt", at = @At("HEAD"))
     private void writeReturnLoot(NbtCompound nbt, CallbackInfo ci) {
-        nbt.putBoolean("needReturnLoot", invasionmod$NeedReturnLoot);
+        nbt.putBoolean("needReturnLoot", invasionmod$needReturnLoot);
     }
 
     @Inject(at = @At(value = "HEAD"), method = "onDeath")
     private void onDeathInject(DamageSource damageSource, CallbackInfo ci) {
         PlayerEntity playerEntity = ((PlayerEntity) ((Object) this));
+        ServerPlayerEntityCallback.ON_PLAYER_DEATH.invoker().notify(((ServerPlayerEntity) ((Object) this)));
 
         LOGGER.info("Player " + playerEntity.getName() + " died.");
         LOGGER.info("status: " + playerEntity.getStatusEffects().toString());
@@ -93,5 +100,30 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         ServerPlayerEntity player = (ServerPlayerEntity) ((Object) this);
 
         return DimensionManager.getPlayerWorldHandle(player.getUuidAsString(), server).getRegistryKey();
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void tickInject(CallbackInfo ci) {
+        ServerPlayerEntity player = (ServerPlayerEntity) ((Object) this);
+
+        ChunkPos currentChunkPos = player.getWorld().getChunk(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getPos();
+
+//        LOGGER.info("prev %s cur %s ".formatted(((invasionmod$lastChunkPos == null) ? "nol" : invasionmod$lastChunkPos.toString()), currentChunkPos.toString()));
+        if (invasionmod$lastChunkPos != null && invasionmod$lastChunkPos != currentChunkPos)
+            ServerPlayerEntityCallback.ON_ENTER_CHUNK.invoker().notify(player);
+
+        invasionmod$lastChunkPos = currentChunkPos;
+    }
+
+    @Inject(method = "wakeUp", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkManager;sendToNearbyPlayers(Lnet/minecraft/entity/Entity;Lnet/minecraft/network/packet/Packet;)V"))
+    private void wakeUpInject(boolean skipSleepTimer, boolean updateSleepingPlayers, CallbackInfo ci) {
+        ServerPlayerEntity player = (ServerPlayerEntity) ((Object) this);
+
+        ServerPlayerEntityCallback.ON_WAKE_UP.invoker().notify(player);
+    }
+
+    @Inject(at = @At(value = "TAIL"), method = "swingHand")
+    private void swingHandInject(Hand hand, CallbackInfo ci) {
+        ServerPlayerEntityCallback.ON_PLAYER_SWING_HAND.invoker().notify(hand, ((ServerPlayerEntity) ((Object) this)));
     }
 }

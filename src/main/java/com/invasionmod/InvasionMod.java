@@ -1,10 +1,13 @@
 package com.invasionmod;
 
 import com.invasionmod.access.ServerPlayerEntityAccess;
+import com.invasionmod.callback.ServerPlayerEntityCallback;
+import com.invasionmod.entity.GhostEntity;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
 import com.invasionmod.item.DimensionGrabberItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -12,12 +15,17 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.CampfireBlock;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.block.pattern.BlockPatternBuilder;
 import net.minecraft.block.pattern.CachedBlockPosition;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.CreeperEntity;
@@ -64,11 +72,18 @@ public class InvasionMod implements ModInitializer {
     public static BlockPattern portalPattern = null;
     private static final Predicate<BlockState> IS_LIT_SOUL_CAMPFIRE = state -> state != null && state.isOf(Blocks.SOUL_CAMPFIRE) && state.get(CampfireBlock.LIT);
 
+    public static final EntityType<GhostEntity> GHOST = Registry.register(
+            Registries.ENTITY_TYPE,
+            new Identifier(MOD_ID, "ghost"),
+            FabricEntityTypeBuilder.create(SpawnGroup.MISC, GhostEntity::new).disableSaving().dimensions(EntityDimensions.fixed(0.6f, 1.8f)).trackRangeBlocks(32).trackedUpdateRate(2).build()
+    );
+
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
+        net.minecraft.SharedConstants.isDevelopment = true;
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
                 .register(content -> content.add(TRAVEL_STONE));
 
@@ -77,6 +92,8 @@ public class InvasionMod implements ModInitializer {
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
                 .register(content -> content.add(CHUNK_SWITCHER));
+
+        FabricDefaultAttributeRegistry.register(GHOST, GhostEntity.createLivingAttributes());
 
         if (portalPattern == null) {
             portalPattern = BlockPatternBuilder
@@ -122,6 +139,14 @@ public class InvasionMod implements ModInitializer {
 
         // entity use restrictions
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            // debug thing
+
+            if(entity instanceof GhostEntity ghostEntity){
+                ghostEntity.setPlayer(player);
+                LOGGER.info("Set ghost entity player to " + player.getName().getString());
+            }
+
+
             ItemStack itemStack = player.getStackInHand(hand);
             Item usedItem = itemStack.getItem();
 
@@ -171,6 +196,15 @@ public class InvasionMod implements ModInitializer {
                 player.removeStatusEffect(PHANTOM);
                 player.removeStatusEffect(StatusEffects.MINING_FATIGUE);
             }
+
+            GhostManager.onPlayerJoin(player);
         });
+
+        //
+        ServerChunkEvents.CHUNK_LOAD.register(GhostManager::onChunkLoad);
+
+        ServerChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> GhostManager.onChunkUnload());
+
+        ServerPlayerEntityCallback.ON_ENTER_CHUNK.register(GhostManager::onPlayerChangedChunk);
     }
 }
