@@ -1,5 +1,6 @@
 package com.invasionmod.util;
 
+import com.invasionmod.item.SoulGrabberItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 
@@ -77,6 +78,8 @@ public class Nbt {
 
     static private void clearNbt(ItemStack stack, String nbtName) {
         stack.getOrCreateSubNbt(MOD_ID).remove(nbtName);
+        if (!(stack.getItem() instanceof SoulGrabberItem))
+            stack.removeSubNbt(MOD_ID);
     }
 
     static public void clearOwned(ItemStack stack) {
@@ -85,8 +88,13 @@ public class Nbt {
 
     static public boolean getIsOwned(ItemStack stack) {
         NbtCompound nbt = createNbtIfAbsent(stack);
+        if (!nbt.contains(IS_OWNED)) {
+            clearNbt(stack, IS_OWNED);
 
-        return nbt.contains(IS_OWNED);
+            return false;
+        }
+
+        return true;
     }
 
     static public boolean hasNbtPlayerUuid(ItemStack stack) {

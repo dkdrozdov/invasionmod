@@ -25,7 +25,7 @@ public abstract class BucketItemMixin {
         ItemStack itemStack = user.getStackInHand(hand);
         if (user.hasStatusEffect(PHANTOM)) {
             if(!user.getWorld().isClient)
-                user.sendMessage(Text.of("You can't use bucket to fill it or place fluids while invading other world!"), true);
+                user.sendMessage(Text.translatable("invasionmod.phantom.cant_use_bucket"), true);
 
             cir.setReturnValue(TypedActionResult.fail(itemStack));
             cir.cancel();

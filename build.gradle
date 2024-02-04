@@ -28,7 +28,28 @@ loom {
 			sourceSet sourceSets.client
 		}
 	}
+	runs {
+		datagenClient {
+			client()
+			name "Data Generation Client"
+			vmArg "-Dfabric-api.datagen"
+			vmArg "-Dfabric-api.datagen.output-dir=${file("src/main/generated")}"
+			vmArg "-Dfabric-api.datagen.modid=invasionmod"
 
+			ideConfigGenerated = true
+			runDir "build/datagen"
+		}
+	}
+}
+
+sourceSets {
+	main {
+		resources {
+			srcDirs += [
+					'src/main/generated'
+			]
+		}
+	}
 }
 
 dependencies {

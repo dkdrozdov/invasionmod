@@ -9,6 +9,7 @@ import com.invasionmod.item.SoulGrabberItem;
 import com.invasionmod.item.TravelStoneItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -89,7 +90,8 @@ public class InvasionMod implements ModInitializer {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
-        net.minecraft.SharedConstants.isDevelopment = true;
+
+
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
                 .register(content -> content.add(TRAVEL_STONE));
 
@@ -121,7 +123,7 @@ public class InvasionMod implements ModInitializer {
                 Item usedItem = player.getStackInHand(hand).getItem();
 
                 if (usedItem == Items.FLINT_AND_STEEL || usedItem == Items.FIRE_CHARGE) {
-                    player.sendMessage(Text.of("You can't place fire while invading other worlds!"), true);
+                    player.sendMessage(Text.translatable("invasionmod.phantom.cant_place_fire"), true);
 
                     return ActionResult.FAIL;
                 }
@@ -135,7 +137,7 @@ public class InvasionMod implements ModInitializer {
         {
             if (player.hasStatusEffect(PHANTOM) &&
                     (state.isIn(BlockTags.CROPS) || state.isIn(BlockTags.FLOWERS) || state.isIn(BlockTags.TALL_FLOWERS))) {
-                player.sendMessage(Text.of("You can't break this block (directly) while invading other world!"), true);
+                player.sendMessage(Text.translatable("invasionmod.phantom.cant_break_block"), true);
 
                 return false;
             }
@@ -152,7 +154,7 @@ public class InvasionMod implements ModInitializer {
                     && (entity instanceof CreeperEntity)
                     && (usedItem == Items.FLINT_AND_STEEL
                     || usedItem == Items.FIRE_CHARGE)) {
-                player.sendMessage(Text.of("You can't light creepers while invading other world!"), true);
+                player.sendMessage(Text.translatable("invasionmod.phantom.cant_light_creepers"), true);
 
                 return ActionResult.FAIL;
             }
@@ -163,7 +165,7 @@ public class InvasionMod implements ModInitializer {
         EntitySleepEvents.ALLOW_SETTING_SPAWN.register((player, sleepingPos) ->
         {
             if (player.hasStatusEffect(PHANTOM)) {
-                player.sendMessage(Text.of("You can't change spawn point while invading other world!"), true);
+                player.sendMessage(Text.translatable("invasionmod.phantom.cant_change_spawn"), true);
 
                 return false;
             }
@@ -177,7 +179,7 @@ public class InvasionMod implements ModInitializer {
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) ->
         {
             if (player.hasStatusEffect(PHANTOM) && !(entity instanceof PlayerEntity)) {
-                player.sendMessage(Text.of("You can't attack mobs while invading other world!"), true);
+                player.sendMessage(Text.translatable("invasionmod.phantom.cant_attack_mobs"), true);
 
                 return ActionResult.FAIL;
             }
@@ -209,5 +211,13 @@ public class InvasionMod implements ModInitializer {
             if (player.getWorld().getPlayers().stream().noneMatch(playerEntity -> playerEntity.hasStatusEffect(PHANTOM)))
                 ServerPlayNetworking.send(player, ALLOW_RESPAWN_PACKET_ID, PacketByteBufs.empty());
         }));
+
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+            if (((ServerPlayerEntityAccess) oldPlayer).invasionmod$getShouldGetStone()) {
+                ItemStack stoneStackForKilled = new ItemStack(TRAVEL_STONE, 1);
+                newPlayer.giveItemStack(stoneStackForKilled);
+                ((ServerPlayerEntityAccess) newPlayer).invasionmod$setShouldGetStone(false);
+            }
+        });
     }
 }

@@ -86,7 +86,6 @@ public class PhantomStatusEffect extends StatusEffect {
 
                         droppedStack.setCount(originalCount - allowedStackSize);
 
-
                         ItemEntity itemEntity = serverPlayerEntity.dropItem(droppedStack, true, false);
                         if (itemEntity != null)
                             itemEntity.setPortalCooldown(300);

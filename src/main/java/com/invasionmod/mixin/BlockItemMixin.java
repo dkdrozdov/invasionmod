@@ -27,7 +27,7 @@ public abstract class BlockItemMixin {
 
             if (playerEntity.hasStatusEffect(PHANTOM) && !blockIsFallingBlock) {
                 if (!playerEntity.getWorld().isClient)
-                    playerEntity.sendMessage(Text.of("You can't place non-falling blocks while invading other world!"), true);
+                    playerEntity.sendMessage(Text.translatable("invasionmod.phantom.cant_place_non_falling"), true);
 
                 return false;
             }

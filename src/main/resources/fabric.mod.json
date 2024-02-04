@@ -1,41 +1,44 @@
 {
-	"schemaVersion": 1,
-	"id": "invasionmod",
-	"version": "${version}",
-	"name": "Invasion mod",
-	"description": "This is a mod about personal dimensions and invasions!",
-	"authors": [
-		"Falanero"
-	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "CC0-1.0",
-	"icon": "assets/invasionmod/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"com.invasionmod.InvasionMod"
-		],
-		"client": [
-			"com.invasionmod.InvasionModClient"
-		]
-	},
-	"mixins": [
-		"invasionmod.mixins.json",
-		{
-			"config": "invasionmod.client.mixins.json",
-			"environment": "client"
-		}
-	],
-	"depends": {
-		"fabricloader": ">=0.15.0",
-		"minecraft": "~1.20.4",
-		"java": ">=17",
-		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
-	}
+  "schemaVersion": 1,
+  "id": "invasionmod",
+  "version": "${version}",
+  "name": "Invasion mod",
+  "description": "This is a mod about personal dimensions and invasions!",
+  "authors": [
+    "Falanero"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+  "license": "CC0-1.0",
+  "icon": "assets/invasionmod/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.invasionmod.datagen.InvasionModDataGenerator"
+    ],
+    "main": [
+      "com.invasionmod.InvasionMod"
+    ],
+    "client": [
+      "com.invasionmod.InvasionModClient"
+    ]
+  },
+  "mixins": [
+    "invasionmod.mixins.json",
+    {
+      "config": "invasionmod.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.20.4",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
 }

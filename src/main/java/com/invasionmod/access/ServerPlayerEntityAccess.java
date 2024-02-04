@@ -10,4 +10,7 @@ public interface ServerPlayerEntityAccess {
     Identifier invasionmod$getReturnLootWorld();
 
     void invasionmod$setReturnLootWorld(Identifier _needReturnLoot);
+
+    boolean invasionmod$getShouldGetStone();
+    void invasionmod$setShouldGetStone(boolean _shouldGetStone);
 }

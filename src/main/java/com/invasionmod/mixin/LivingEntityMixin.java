@@ -1,9 +1,14 @@
 package com.invasionmod.mixin;
 
 import com.invasionmod.DimensionManager;
+import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
+import com.invasionmod.item.SoulGrabberItem;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -18,8 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
 import static com.invasionmod.DimensionManager.getPlayerWorldHandle;
-import static com.invasionmod.InvasionMod.LOGGER;
-import static com.invasionmod.InvasionMod.PHANTOM;
+import static com.invasionmod.InvasionMod.*;
 
 @Debug(export = true)
 @Mixin(LivingEntity.class)
@@ -74,5 +78,25 @@ public abstract class LivingEntityMixin {
         cir.setReturnValue(cir.getReturnValue() && !target.hasStatusEffect(PHANTOM));
     }
 
+    @Inject(at = @At(value = "HEAD"), method = "onKilledBy")
+    private void onKilledByInject(LivingEntity killer, CallbackInfo ci) {
+        if (killer == null || killer.getWorld().isClient) return;
+
+        LivingEntity livingEntity = ((LivingEntity) (Object) this);
+
+        if (livingEntity instanceof ServerPlayerEntity killedPlayer
+                && killer instanceof ServerPlayerEntity killerPlayer) {
+            Item weaponItem = killer.getMainHandStack().getItem();
+            ItemStack stoneStack = new ItemStack(TRAVEL_STONE, weaponItem instanceof SoulGrabberItem ? 2 : 1);
+
+            if (!killedPlayer.hasStatusEffect(PHANTOM))
+                ((ServerPlayerEntityAccess)killedPlayer).invasionmod$setShouldGetStone(true);
+
+            if (!killerPlayer.giveItemStack(stoneStack)) {
+                ItemEntity itemEntity = killerPlayer.dropItem(stoneStack, true, false);
+                killer.getWorld().spawnEntity(itemEntity);
+            }
+        }
+    }
 }
   

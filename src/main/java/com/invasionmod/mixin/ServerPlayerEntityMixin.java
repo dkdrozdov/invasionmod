@@ -38,6 +38,9 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
     public MinecraftServer server;
 
     @Unique
+    boolean invasionmod$shouldGetStone = false;
+
+    @Unique
     boolean invasionmod$needReturnLoot;
     @Unique
     ChunkPos invasionmod$lastChunkPos = null;
@@ -48,9 +51,15 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
     public boolean invasionmod$getNeedReturnLoot() {
         return invasionmod$needReturnLoot;
     }
+    public boolean invasionmod$getShouldGetStone() {
+        return invasionmod$shouldGetStone;
+    }
 
     public void invasionmod$setNeedReturnLoot(boolean _needReturnLoot) {
         invasionmod$needReturnLoot = _needReturnLoot;
+    }
+    public void invasionmod$setShouldGetStone(boolean _shouldGetStone) {
+        invasionmod$shouldGetStone = _shouldGetStone;
     }
 
     public Identifier invasionmod$getReturnLootWorld() {
@@ -126,4 +135,6 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
     private void swingHandInject(Hand hand, CallbackInfo ci) {
         ServerPlayerEntityCallback.ON_PLAYER_SWING_HAND.invoker().notify(hand, ((ServerPlayerEntity) ((Object) this)));
     }
+
+
 }

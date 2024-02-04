@@ -1,0 +1,19 @@
+{
+  "item.invasionmod.chunk_swapper": "Менятель чанков",
+  "item.invasionmod.soul_grabber": "Хвататель душ",
+  "item.invasionmod.travel_stone": "Камень путешествия",
+  "invasionmod.phantom.cant_place_fire": "Нельзя поджигать, вторгаясь в другие миры!",
+  "invasionmod.phantom.cant_break_block": "Нельзя ломать этот блок (напрямую), вторгаясь в другие миры!",
+  "invasionmod.phantom.cant_light_creepers": "Нельзя поджигать криперов, вторгаясь в чужие миры!",
+  "invasionmod.phantom.cant_change_spawn": "Нельзя устанавливать точку спавна, вторгаясь в чужие миры!",
+  "invasionmod.phantom.cant_attack_mobs": "Нельзя атаковать существ, вторгаясь в чужие миры!",
+  "invasionmod.phantom.cant_place_non_falling": "Нельзя ставить не-сыпучие блоки, вторгаясь в чужие миры!",
+  "invasionmod.phantom.cant_use_bucket": "Нельзя использовать ведро чтобы черпать или выливать жидкости, вторгаясь в чужие миры!",
+  "invasionmod.soul_grabber.should_choose_player": "Сначала нужно выбрать игрока!",
+  "invasionmod.soul_grabber.you_are_target": "Выбранный игрок это вы!",
+  "invasionmod.soul_grabber.only_from_own_world": "Это можно использовать только из своего мира!",
+  "invasionmod.soul_grabber.target_offline": "Выбранный игрок не в сети.",
+  "invasionmod.soul_grabber.you_need_portal": "Для телепортации нужен подходящий портал!",
+  "invasionmod.soul_grabber.target_dead": "Выбранный игрок мертв.",
+  "invasionmod.soul_grabber.already_has_soul": "В хватателе душ уже есть душа!"
+}

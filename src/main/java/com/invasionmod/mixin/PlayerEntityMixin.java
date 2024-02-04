@@ -47,7 +47,7 @@ public abstract class PlayerEntityMixin {
                                 targetEntity.getName().toString(),
                                 targetEntity.getUuidAsString(),
                                 DimensionManager.getPlayerWorldRegistry(Nbt.getPlayerUuid(itemStack)).toString()));
-                playerEntity.sendMessage(Text.of("Soul grabber already has soul!"), true);
+                playerEntity.sendMessage(Text.translatable("invasionmod.soul_grabber.already_has_soul"), true);
                 return;
             }
 

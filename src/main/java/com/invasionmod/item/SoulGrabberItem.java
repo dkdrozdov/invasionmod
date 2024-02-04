@@ -2,6 +2,7 @@ package com.invasionmod.item;
 
 import com.invasionmod.DimensionManager;
 import com.invasionmod.InvasionMod;
+import com.invasionmod.util.Nbt;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -9,6 +10,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.pattern.BlockPattern;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
@@ -71,7 +73,7 @@ public class SoulGrabberItem extends Item {
         if (!hasNbtPlayerUuid(itemStack)) {
             LOGGER.info("Player %s with UUID %s tried to use DimensionGrabberItem, but the target uuid is empty."
                     .formatted(player.getName().getString(), player.getUuidAsString()));
-            player.sendMessage(Text.of("You have to choose target player first!"), true);
+            player.sendMessage(Text.translatable("invasionmod.soul_grabber.should_choose_player"), true);
             return null;
         }
 
@@ -87,7 +89,7 @@ public class SoulGrabberItem extends Item {
             LOGGER.info("Player " + player.getName().getString() + " with UUID " + player.getUuidAsString() +
                     " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but target player is themselves.");
-            player.sendMessage(Text.of("You are the target player!"), true);
+            player.sendMessage(Text.translatable("invasionmod.soul_grabber.you_are_target"), true);
             return false;
         }
 
@@ -95,7 +97,7 @@ public class SoulGrabberItem extends Item {
             LOGGER.info("Player " + player.getName().getString() + " with UUID " + player.getUuidAsString() +
                     " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but the dimension of departure is forbidden: " + world.getRegistryKey().toString());
-            player.sendMessage(Text.of("You can only use that from your own world!"), true);
+            player.sendMessage(Text.translatable("invasionmod.soul_grabber.only_from_own_world"), true);
             return false;
         }
 
@@ -105,7 +107,7 @@ public class SoulGrabberItem extends Item {
             LOGGER.info("Player " + player.getName().getString() + " with UUID " + player.getUuidAsString() +
                     " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
                     " via DimensionGrabberItem, but target player is offline.");
-            player.sendMessage(Text.of("Target player is offline."), true);
+            player.sendMessage(Text.translatable("invasionmod.soul_grabber.target_offline"), true);
             return false;
         }
 
@@ -135,7 +137,7 @@ public class SoulGrabberItem extends Item {
         BlockPattern.Result validPortalMatch = InvasionMod.portalPattern.searchAround(serverWorld, fromPos);
 
         if (validPortalMatch == null || validPortalMatch.getUp() != Direction.UP) {
-            invaderPlayer.sendMessage(Text.of("You need a valid portal to teleport!"), true);
+            invaderPlayer.sendMessage(Text.translatable("invasionmod.soul_grabber.you_need_portal"), true);
 
             return false;
         }
@@ -147,7 +149,7 @@ public class SoulGrabberItem extends Item {
             LOGGER.info("Player " + invaderPlayer.getName().getString() + " with UUID " + invaderPlayer.getUuidAsString() +
                     " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUUID).toString() +
                     " via DimensionGrabberItem, but target player is dead.");
-            invaderPlayer.sendMessage(Text.of("Target player is dead."), true);
+            invaderPlayer.sendMessage(Text.translatable("invasionmod.soul_grabber.target_dead"), true);
             return false;
         }
 
@@ -348,6 +350,14 @@ public class SoulGrabberItem extends Item {
         });
 
         return true;
+    }
+
+    @Override
+    public void appendTooltip(ItemStack itemStack, World world, List<Text> tooltip, TooltipContext tooltipContext) {
+        String playerName = Nbt.getPlayerName(itemStack);
+        if (!Objects.equals(playerName, "")) {
+            tooltip.add(Text.of(playerName));
+        }
     }
 }
 
