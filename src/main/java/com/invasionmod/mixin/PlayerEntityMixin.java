@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import static com.invasionmod.InvasionMod.DIMENSION_GRABBER;
+import static com.invasionmod.InvasionMod.SOUL_GRABBER;
 import static com.invasionmod.InvasionMod.LOGGER;
 
 @Debug(export = true)
@@ -38,16 +38,16 @@ public abstract class PlayerEntityMixin {
                 itemStack.getItem().getName().getString() + " on " +
                 targetEntity.getName().getString() + " of type " + targetEntity.getClass() + ".");
 
-        if (((targetEntity instanceof PlayerEntity) || (targetEntity instanceof GhostEntity)) && itemStack.isOf(DIMENSION_GRABBER)) {
+        if (((targetEntity instanceof PlayerEntity) || (targetEntity instanceof GhostEntity)) && itemStack.isOf(SOUL_GRABBER)) {
             if (Nbt.hasNbtPlayerUuid(itemStack)) {
-                LOGGER.info(("Player %s with UUID %s tried to grab dimension of player %s " +
-                        "with UUID %s via DimensionGrabberItem, but the itemStack already has destination: %s")
+                LOGGER.info(("Player %s with UUID %s tried to grab uuid of player %s " +
+                        "with UUID %s via DimensionGrabberItem, but the itemStack already has target: %s")
                         .formatted(playerEntity.getName().getString(),
                                 playerEntity.getUuidAsString(),
                                 targetEntity.getName().toString(),
                                 targetEntity.getUuidAsString(),
                                 DimensionManager.getPlayerWorldRegistry(Nbt.getPlayerUuid(itemStack)).toString()));
-                playerEntity.sendMessage(Text.of("Dimension grabber already has destination!"), true);
+                playerEntity.sendMessage(Text.of("Soul grabber already has soul!"), true);
                 return;
             }
 

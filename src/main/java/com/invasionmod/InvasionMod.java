@@ -4,7 +4,9 @@ import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.callback.ServerPlayerEntityCallback;
 import com.invasionmod.entity.GhostEntity;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
-import com.invasionmod.item.DimensionGrabberItem;
+import com.invasionmod.item.ChunkSwapperItem;
+import com.invasionmod.item.SoulGrabberItem;
+import com.invasionmod.item.TravelStoneItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
@@ -60,14 +62,14 @@ public class InvasionMod implements ModInitializer {
 
     public static final Item TRAVEL_STONE =
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "travel_stone"),
-                    new Item(new FabricItemSettings()));
+                    new TravelStoneItem(new FabricItemSettings()));
 
-    public static final Item DIMENSION_GRABBER =
-            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "dimension_grabber"),
-                    new DimensionGrabberItem(new FabricItemSettings().maxCount(1)));
-    public static final Item CHUNK_SWITCHER =
-            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chunk_switcher"),
-                    new Item(new FabricItemSettings()));
+    public static final Item SOUL_GRABBER =
+            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "soul_grabber"),
+                    new SoulGrabberItem(new FabricItemSettings().maxCount(1)));
+    public static final Item CHUNK_SWAPPER =
+            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chunk_swapper"),
+                    new ChunkSwapperItem(new FabricItemSettings()));
 
     public static final StatusEffect PHANTOM =
             Registry.register(Registries.STATUS_EFFECT, new Identifier(MOD_ID, "phantom"),
@@ -92,10 +94,10 @@ public class InvasionMod implements ModInitializer {
                 .register(content -> content.add(TRAVEL_STONE));
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
-                .register(content -> content.add(DIMENSION_GRABBER));
+                .register(content -> content.add(SOUL_GRABBER));
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
-                .register(content -> content.add(CHUNK_SWITCHER));
+                .register(content -> content.add(CHUNK_SWAPPER));
 
         FabricDefaultAttributeRegistry.register(GHOST, GhostEntity.createLivingAttributes());
 
