@@ -20,8 +20,10 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.CampfireBlock;
@@ -35,10 +37,7 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
 import net.minecraft.predicate.block.BlockStatePredicate;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -72,6 +71,15 @@ public class InvasionMod implements ModInitializer {
             Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chunk_swapper"),
                     new ChunkSwapperItem(new FabricItemSettings()));
 
+    public static final Block SUPPRESSOR =
+            Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "suppressor"),
+                    new Block(FabricBlockSettings.create().strength(3f).requiresTool()));
+
+    public static final BlockItem SUPPRESSOR_ITEM =
+            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "suppressor"),
+                    new BlockItem(SUPPRESSOR, new FabricItemSettings()));
+
+
     public static final StatusEffect PHANTOM =
             Registry.register(Registries.STATUS_EFFECT, new Identifier(MOD_ID, "phantom"),
                     new PhantomStatusEffect());
@@ -100,6 +108,9 @@ public class InvasionMod implements ModInitializer {
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
                 .register(content -> content.add(CHUNK_SWAPPER));
+
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.BUILDING_BLOCKS)
+                .register(content -> content.add(SUPPRESSOR_ITEM));
 
         FabricDefaultAttributeRegistry.register(GHOST, GhostEntity.createLivingAttributes());
 

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "invasionmod:suppressor"
+    }
+  ],
+  "result": {
+    "item": "invasionmod:travel_stone"
+  }
+}

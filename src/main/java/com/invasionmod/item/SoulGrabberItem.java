@@ -34,14 +34,10 @@ import net.minecraft.world.chunk.ChunkSection;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.fantasy.RuntimeWorldHandle;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Predicate;
 
-import static com.invasionmod.InvasionMod.LOGGER;
-import static com.invasionmod.InvasionMod.PHANTOM;
+import static com.invasionmod.InvasionMod.*;
 import static com.invasionmod.util.Nbt.getPlayerUuid;
 import static com.invasionmod.util.Nbt.hasNbtPlayerUuid;
 import static net.minecraft.block.Blocks.*;
@@ -80,7 +76,7 @@ public class SoulGrabberItem extends Item {
         return getPlayerUuid(itemStack);
     }
 
-    private boolean canUse(PlayerEntity player, ServerWorld world, String targetUuid) {
+    private boolean canUse(PlayerEntity player, ServerWorld world, String targetUuid, BlockPos blockPos) {
 
         if (player == null) return false;
         if (world.isClient) return false;
@@ -111,6 +107,17 @@ public class SoulGrabberItem extends Item {
             return false;
         }
 
+        World targetWorld = DimensionManager.getPlayerWorldHandle(targetUuid, world.getServer()).asWorld();
+        Optional<BlockPos> closestSuppressor = BlockPos.findClosest(blockPos, 21, 21, blockPos1 -> targetWorld.getBlockState(blockPos1).isOf(SUPPRESSOR));
+
+        if (closestSuppressor.isPresent()) {
+            LOGGER.info("Player " + player.getName().getString() + " with UUID " + player.getUuidAsString() +
+                    " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUuid).toString() +
+                    " via DimensionGrabberItem, but the action was denied by nearby suppressor.");
+            player.sendMessage(Text.translatable("invasionmod.soul_grabber.suppressor_denied"), true);
+            return false;
+        }
+
         return true;
     }
 
@@ -124,7 +131,7 @@ public class SoulGrabberItem extends Item {
         String targetUUID = getTargetUUID(soulGrabberStack, player);
         if (targetUUID == null) return false;
 
-        if (canUse(player, serverWorld, targetUUID))
+        if (canUse(player, serverWorld, targetUUID, blockPos))
             return invade(player, serverWorld, blockPos, targetUUID);
         return false;
     }
@@ -177,11 +184,7 @@ public class SoulGrabberItem extends Item {
 
     private void setInvadingWeather(ServerWorld destinationWorld) {
         int random = Random.create().nextBetween(0, 100);
-        if (random <= 2)
-            destinationWorld.setWeather(0, 60 * phantomDurationMinutes, false, true);
-        else
-            destinationWorld.setWeather(0, 60 * phantomDurationMinutes, true, false);
-
+        destinationWorld.setWeather(0, 20 * 60 * phantomDurationMinutes, true, random <= 2);
     }
 
     private Vec3d getOrCreatePortal(ServerWorld world, BlockPattern.Result portalMatch) {
@@ -252,7 +255,7 @@ public class SoulGrabberItem extends Item {
         String targetUUID = getTargetUUID(itemStack, player);
         if (targetUUID == null) return false;
 
-        if (canUse(player, serverWorld, targetUUID))
+        if (canUse(player, serverWorld, targetUUID, blockPos))
             return useChunkSwap(player, serverWorld, blockPos, targetUUID);
         return false;
     }

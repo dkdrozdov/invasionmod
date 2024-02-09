@@ -2,6 +2,8 @@
   "item.invasionmod.chunk_swapper": "Chunk Swapper",
   "item.invasionmod.soul_grabber": "Soul Grabber",
   "item.invasionmod.travel_stone": "Travel Stone",
+  "effect.invasionmod.phantom": "Phantom",
+  "block.invasionmod.suppressor": "Suppressor Block",
   "invasionmod.phantom.cant_place_fire": "You can't place fire while invading other worlds!",
   "invasionmod.phantom.cant_break_block": "You can't break this block (directly) while invading other world!",
   "invasionmod.phantom.cant_light_creepers": "You can't light creepers while invading other world!",
@@ -15,5 +17,6 @@
   "invasionmod.soul_grabber.target_offline":"Target player is offline.",
   "invasionmod.soul_grabber.you_need_portal":"You need a valid portal to teleport!",
   "invasionmod.soul_grabber.target_dead":"Target player is dead.",
-  "invasionmod.soul_grabber.already_has_soul":"Soul grabber already has soul!"
+  "invasionmod.soul_grabber.already_has_soul":"Soul grabber already has soul!",
+  "invasionmod.soul_grabber.suppressor_denied" : "Action is suppressed!"
 }
