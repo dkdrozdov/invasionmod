@@ -18,5 +18,6 @@
   "invasionmod.soul_grabber.you_need_portal": "Для телепортации нужен подходящий портал!",
   "invasionmod.soul_grabber.target_dead": "Выбранный игрок мертв.",
   "invasionmod.soul_grabber.already_has_soul": "В хватателе душ уже есть душа!",
-  "invasionmod.soul_grabber.suppressor_denied" : "Действие подавлено супрессором!"
+  "invasionmod.soul_grabber.suppressor_denied" : "Действие подавлено супрессором!",
+  "invasionmod.soul_grabber.empty" : "Пусто"
 }

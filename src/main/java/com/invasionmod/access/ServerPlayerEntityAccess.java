@@ -12,5 +12,10 @@ public interface ServerPlayerEntityAccess {
     void invasionmod$setReturnLootWorld(Identifier _needReturnLoot);
 
     boolean invasionmod$getShouldGetStone();
+
     void invasionmod$setShouldGetStone(boolean _shouldGetStone);
+
+    int invasionmod$getSinnerCounter();
+
+    void invasionmod$setSinnerCounter(int _phantomKills);
 }

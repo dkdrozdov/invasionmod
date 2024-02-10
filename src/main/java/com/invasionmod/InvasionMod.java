@@ -224,6 +224,13 @@ public class InvasionMod implements ModInitializer {
         }));
 
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+
+            // Transfer data
+
+            ((ServerPlayerEntityAccess) newPlayer).invasionmod$setSinnerCounter(((ServerPlayerEntityAccess) oldPlayer).invasionmod$getSinnerCounter());
+
+            // Award Travel Stone
+
             if (((ServerPlayerEntityAccess) oldPlayer).invasionmod$getShouldGetStone()) {
                 ItemStack stoneStackForKilled = new ItemStack(TRAVEL_STONE, 1);
                 newPlayer.giveItemStack(stoneStackForKilled);

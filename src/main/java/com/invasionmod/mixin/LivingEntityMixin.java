@@ -4,6 +4,7 @@ import com.invasionmod.DimensionManager;
 import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
 import com.invasionmod.item.SoulGrabberItem;
+import com.invasionmod.util.Nbt;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -86,16 +87,42 @@ public abstract class LivingEntityMixin {
 
         if (livingEntity instanceof ServerPlayerEntity killedPlayer
                 && killer instanceof ServerPlayerEntity killerPlayer) {
+
+            // Award Travel Stones
+
             Item weaponItem = killer.getMainHandStack().getItem();
             ItemStack stoneStack = new ItemStack(TRAVEL_STONE, weaponItem instanceof SoulGrabberItem ? 2 : 1);
 
             if (!killedPlayer.hasStatusEffect(PHANTOM))
-                ((ServerPlayerEntityAccess)killedPlayer).invasionmod$setShouldGetStone(true);
+                ((ServerPlayerEntityAccess) killedPlayer).invasionmod$setShouldGetStone(true);
 
             if (!killerPlayer.giveItemStack(stoneStack)) {
+                if (killerPlayer.hasStatusEffect(PHANTOM)) Nbt.setIsOwned(stoneStack, true);
+
                 ItemEntity itemEntity = killerPlayer.dropItem(stoneStack, true, false);
                 killer.getWorld().spawnEntity(itemEntity);
             }
+
+            // Update Sinner Counter
+
+            int killedPlayerSinnerCounter = ((ServerPlayerEntityAccess) killedPlayer).invasionmod$getSinnerCounter();
+
+            if (killerPlayer.hasStatusEffect(PHANTOM) && killedPlayerSinnerCounter <= 0) {
+                int sinnerCounter = ((ServerPlayerEntityAccess) killerPlayer).invasionmod$getSinnerCounter();
+
+                ((ServerPlayerEntityAccess) killerPlayer).invasionmod$setSinnerCounter(sinnerCounter + 1);
+                LOGGER.info("Increased player " + killerPlayer.getName().getString()
+                        + "'s Sinner Counter from " + sinnerCounter
+                        + " to " + ((ServerPlayerEntityAccess) killerPlayer).invasionmod$getSinnerCounter() + ".");
+            }
+
+            if (killedPlayerSinnerCounter > 0 && !killedPlayer.hasStatusEffect(PHANTOM)) {
+                ((ServerPlayerEntityAccess) killedPlayer).invasionmod$setSinnerCounter(killedPlayerSinnerCounter - 1);
+                LOGGER.info("Decreased player " + killedPlayer.getName().getString()
+                        + "'s Sinner Counter from " + killedPlayerSinnerCounter
+                        + " to " + ((ServerPlayerEntityAccess) killedPlayer).invasionmod$getSinnerCounter() + ".");
+            }
+
         }
     }
 }

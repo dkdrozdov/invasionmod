@@ -18,5 +18,6 @@
   "invasionmod.soul_grabber.you_need_portal":"You need a valid portal to teleport!",
   "invasionmod.soul_grabber.target_dead":"Target player is dead.",
   "invasionmod.soul_grabber.already_has_soul":"Soul grabber already has soul!",
-  "invasionmod.soul_grabber.suppressor_denied" : "Action is suppressed!"
+  "invasionmod.soul_grabber.suppressor_denied" : "Action is suppressed!",
+  "invasionmod.soul_grabber.empty" : "Empty"
 }

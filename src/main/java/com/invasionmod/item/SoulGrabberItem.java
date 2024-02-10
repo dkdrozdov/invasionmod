@@ -2,6 +2,7 @@ package com.invasionmod.item;
 
 import com.invasionmod.DimensionManager;
 import com.invasionmod.InvasionMod;
+import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.util.Nbt;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
@@ -16,6 +17,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.ChunkDeltaUpdateS2CPacket;
 import net.minecraft.particle.ParticleTypes;
@@ -25,7 +27,10 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Clearable;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
@@ -40,9 +45,80 @@ import java.util.function.Predicate;
 import static com.invasionmod.InvasionMod.*;
 import static com.invasionmod.util.Nbt.getPlayerUuid;
 import static com.invasionmod.util.Nbt.hasNbtPlayerUuid;
+import static com.invasionmod.util.Util.getOpposite;
 import static net.minecraft.block.Blocks.*;
+import static net.minecraft.util.ActionResult.PASS;
 
 public class SoulGrabberItem extends Item {
+
+    private enum UseFailReason {
+        TARGET_UUID_EMPTY,
+        SELF_TARGET,
+        DIMENSION_FORBIDDEN,
+        TARGET_OFFLINE,
+        SUPPRESSOR_DENIED,
+        TARGET_DEAD;
+
+        public void log(String playerName, String playerUUID, @Nullable String targetUUID, @Nullable World world) {
+            switch (this) {
+                case TARGET_UUID_EMPTY ->
+                        LOGGER.info("Player %s with UUID %s tried to use DimensionGrabberItem, but the target uuid is empty."
+                                .formatted(playerName, playerUUID));
+                case SELF_TARGET -> {
+                    assert targetUUID != null;
+
+                    LOGGER.info("Player " + playerName + " with UUID " + playerUUID +
+                            " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUUID).toString() +
+                            " via DimensionGrabberItem, but target player is themselves.");
+                }
+                case DIMENSION_FORBIDDEN -> {
+                    assert targetUUID != null;
+                    assert world != null;
+
+                    LOGGER.info("Player " + playerName + " with UUID " + playerUUID +
+                            " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUUID).toString() +
+                            " via DimensionGrabberItem, but the dimension of departure is forbidden: " + world.getRegistryKey().toString());
+                }
+                case TARGET_OFFLINE -> {
+                    assert targetUUID != null;
+
+                    LOGGER.info("Player " + playerName + " with UUID " + playerUUID +
+                            " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUUID).toString() +
+                            " via DimensionGrabberItem, but target player is offline.");
+                }
+                case SUPPRESSOR_DENIED -> {
+                    assert targetUUID != null;
+
+                    LOGGER.info("Player " + playerName + " with UUID " + playerUUID +
+                            " tried to interact with world " + DimensionManager.getPlayerWorldRegistry(targetUUID).toString() +
+                            " via DimensionGrabberItem, but the action was denied by nearby suppressor.");
+                }
+                case TARGET_DEAD -> {
+                    assert targetUUID != null;
+
+                    LOGGER.info("Player " + playerName + " with UUID " + playerUUID +
+                            " tried to teleport to world " + DimensionManager.getPlayerWorldRegistry(targetUUID).toString() +
+                            " via DimensionGrabberItem, but target player is dead.");
+                }
+            }
+        }
+
+        public void sendMessage(PlayerEntity player) {
+            switch (this) {
+                case TARGET_UUID_EMPTY ->
+                        player.sendMessage(Text.translatable("invasionmod.soul_grabber.should_choose_player"), true);
+                case SELF_TARGET ->
+                        player.sendMessage(Text.translatable("invasionmod.soul_grabber.you_are_target"), true);
+                case DIMENSION_FORBIDDEN ->
+                        player.sendMessage(Text.translatable("invasionmod.soul_grabber.only_from_own_world"), true);
+                case TARGET_OFFLINE ->
+                        player.sendMessage(Text.translatable("invasionmod.soul_grabber.target_offline"), true);
+                case SUPPRESSOR_DENIED ->
+                        player.sendMessage(Text.translatable("invasionmod.soul_grabber.suppressor_denied"), true);
+                case TARGET_DEAD -> player.sendMessage(Text.translatable("invasionmod.soul_grabber.target_dead"), true);
+            }
+        }
+    }
 
     private final static int phantomDurationMinutes = 3;
 
@@ -63,7 +139,6 @@ public class SoulGrabberItem extends Item {
         }
     }
 
-    @Nullable
     private String getTargetUUID(ItemStack itemStack, PlayerEntity player) {
 
         if (!hasNbtPlayerUuid(itemStack)) {
@@ -74,6 +149,27 @@ public class SoulGrabberItem extends Item {
         }
 
         return getPlayerUuid(itemStack);
+    }
+
+    @Override
+    public ActionResult useOnBlock(ItemUsageContext context) {
+        Hand hand = context.getHand();
+        ItemStack soulGrabberStack = context.getStack();
+        PlayerEntity player = context.getPlayer();
+
+        if (player == null) return ActionResult.PASS;
+
+        ItemStack otherStack = player.getStackInHand(getOpposite(hand));
+        if (!((otherStack.getItem() instanceof TravelStoneItem) ||
+                (otherStack.getItem() instanceof ChunkSwapperItem))) {
+            if (tryUseTeleportRandom(context.getWorld(), soulGrabberStack, player, context.getBlockPos())) {
+                player.getItemCooldownManager().set(soulGrabberStack.getItem(), 40);
+
+                return ActionResult.success(player.getWorld().isClient);
+            }
+            return ActionResult.PASS;
+        }
+        return PASS;
     }
 
     private boolean canUse(PlayerEntity player, ServerWorld world, String targetUuid, BlockPos blockPos) {
@@ -121,6 +217,37 @@ public class SoulGrabberItem extends Item {
         return true;
     }
 
+    private boolean tryUseTeleportRandom(World playerWorld, ItemStack soulGrabberStack, PlayerEntity player, BlockPos blockPos) {
+        if (playerWorld.isClient)
+            return false;
+
+        ServerWorld serverWorld = (ServerWorld) playerWorld;
+
+        if (hasNbtPlayerUuid(soulGrabberStack)) return false;
+
+        MinecraftServer server = serverWorld.getServer();
+
+        List<ServerPlayerEntity> sinners = PlayerLookup
+                .all(server)
+                .stream()
+                .filter(serverPlayerEntity -> ((ServerPlayerEntityAccess) serverPlayerEntity).invasionmod$getSinnerCounter() > 0)
+                .toList();
+
+        if (sinners.size() == 0) return false;
+        Optional<ServerPlayerEntity> sinner = sinners.stream().skip(serverWorld.getRandom().nextInt(sinners.size())).findFirst();
+
+        if (sinner.isEmpty()) {
+            return false;
+        }
+        String sinnerUUID = sinner.get().getUuidAsString();
+
+        if (canUse(player, serverWorld, sinnerUUID, blockPos)) {
+            return invade(player, serverWorld, blockPos, sinnerUUID);
+        }
+
+        return false;
+    }
+
     public boolean tryUseTeleport(World playerWorld, ItemStack soulGrabberStack, PlayerEntity player, BlockPos blockPos) {
 
         if (playerWorld.isClient)
@@ -129,6 +256,7 @@ public class SoulGrabberItem extends Item {
         ServerWorld serverWorld = (ServerWorld) playerWorld;
 
         String targetUUID = getTargetUUID(soulGrabberStack, player);
+
         if (targetUUID == null) return false;
 
         if (canUse(player, serverWorld, targetUUID, blockPos))
@@ -256,11 +384,11 @@ public class SoulGrabberItem extends Item {
         if (targetUUID == null) return false;
 
         if (canUse(player, serverWorld, targetUUID, blockPos))
-            return useChunkSwap(player, serverWorld, blockPos, targetUUID);
+            return useChunkSwap(serverWorld, blockPos, targetUUID);
         return false;
     }
 
-    private boolean useChunkSwap(PlayerEntity player, ServerWorld serverWorld, BlockPos blockPos, String targetUUID) {
+    private boolean useChunkSwap(ServerWorld serverWorld, BlockPos blockPos, String targetUUID) {
         MinecraftServer server = serverWorld.getServer();
         RuntimeWorldHandle targetWorldHandle = DimensionManager.getPlayerWorldHandle(targetUUID, server);
         ServerWorld targetWorld = targetWorldHandle.asWorld();
@@ -358,9 +486,13 @@ public class SoulGrabberItem extends Item {
     @Override
     public void appendTooltip(ItemStack itemStack, World world, List<Text> tooltip, TooltipContext tooltipContext) {
         String playerName = Nbt.getPlayerName(itemStack);
+
         if (!Objects.equals(playerName, "")) {
-            tooltip.add(Text.of(playerName));
+            tooltip.add(Text.literal(playerName).formatted(Formatting.BOLD, Formatting.YELLOW));
+        } else {
+            tooltip.add(Text.translatable("invasionmod.soul_grabber.empty").formatted(Formatting.ITALIC, Formatting.GRAY));
         }
+
     }
 }
 

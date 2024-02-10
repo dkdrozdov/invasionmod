@@ -37,20 +37,50 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
     @Final
     public MinecraftServer server;
 
+    /**
+     * Whether the player should receive Travel Stone upon respawning.
+     * Used when the player is killed by a phantom.
+     */
     @Unique
     boolean invasionmod$shouldGetStone = false;
 
+    /**
+     * Whether the player (being phantom) should drop all stolen items back to the invaded world.
+     * Used when phantom joins after server restart before invaded world is loaded.
+     */
     @Unique
     boolean invasionmod$needReturnLoot;
     @Unique
     ChunkPos invasionmod$lastChunkPos = null;
 
+    /**
+     * The world where the player's stolen loot (while being phantom) should be returned to.
+     *
+     * @see #invasionmod$needReturnLoot
+     */
     @Unique
-    Identifier invasionmod$ReturnLootWorld;
+    Identifier invasionmod$returnLootWorld;
+
+    /**
+     * How many times player's world can be invaded for free.
+     */
+    @Unique
+    int invasionmod$sinnerCounter = 0;
+
+    @Unique
+    public int invasionmod$getSinnerCounter() {
+        return invasionmod$sinnerCounter;
+    }
+
+    @Unique
+    public void invasionmod$setSinnerCounter(int sinnerCounter) {
+        invasionmod$sinnerCounter = sinnerCounter;
+    }
 
     public boolean invasionmod$getNeedReturnLoot() {
         return invasionmod$needReturnLoot;
     }
+
     public boolean invasionmod$getShouldGetStone() {
         return invasionmod$shouldGetStone;
     }
@@ -58,26 +88,31 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
     public void invasionmod$setNeedReturnLoot(boolean _needReturnLoot) {
         invasionmod$needReturnLoot = _needReturnLoot;
     }
+
     public void invasionmod$setShouldGetStone(boolean _shouldGetStone) {
         invasionmod$shouldGetStone = _shouldGetStone;
     }
 
     public Identifier invasionmod$getReturnLootWorld() {
-        return invasionmod$ReturnLootWorld;
+        return invasionmod$returnLootWorld;
     }
 
     public void invasionmod$setReturnLootWorld(Identifier _needReturnLoot) {
-        invasionmod$ReturnLootWorld = _needReturnLoot;
+        invasionmod$returnLootWorld = _needReturnLoot;
     }
 
     @Inject(method = "readCustomDataFromNbt", at = @At("HEAD"))
     private void readReturnLoot(NbtCompound nbt, CallbackInfo ci) {
         invasionmod$needReturnLoot = nbt.getBoolean("needReturnLoot");
+        invasionmod$shouldGetStone = nbt.getBoolean("shouldGetStone");
+        invasionmod$sinnerCounter = nbt.getInt("sinnerCounter");
     }
 
     @Inject(method = "writeCustomDataToNbt", at = @At("HEAD"))
     private void writeReturnLoot(NbtCompound nbt, CallbackInfo ci) {
         nbt.putBoolean("needReturnLoot", invasionmod$needReturnLoot);
+        nbt.putBoolean("shouldGetStone", invasionmod$shouldGetStone);
+        nbt.putInt("sinnerCounter", invasionmod$sinnerCounter);
     }
 
     @Inject(at = @At(value = "HEAD"), method = "onDeath")
@@ -117,7 +152,6 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
 
         ChunkPos currentChunkPos = player.getWorld().getChunk(new BlockPos((int) player.getX(), (int) player.getY(), (int) player.getZ())).getPos();
 
-//        LOGGER.info("prev %s cur %s ".formatted(((invasionmod$lastChunkPos == null) ? "nol" : invasionmod$lastChunkPos.toString()), currentChunkPos.toString()));
         if (invasionmod$lastChunkPos != null && invasionmod$lastChunkPos != currentChunkPos)
             ServerPlayerEntityCallback.ON_ENTER_CHUNK.invoker().notify(player);
 
