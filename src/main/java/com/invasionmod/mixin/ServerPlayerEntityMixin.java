@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.invasionmod.DimensionManager;
 import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.callback.ServerPlayerEntityCallback;
-import com.invasionmod.util.Nbt;
+import com.invasionmod.util.ItemStackData;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -101,6 +101,9 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         invasionmod$returnLootWorld = _needReturnLoot;
     }
 
+    /*
+     * Reads player's custom data to serverplayer properties (called on join).
+     * */
     @Inject(method = "readCustomDataFromNbt", at = @At("HEAD"))
     private void readReturnLoot(NbtCompound nbt, CallbackInfo ci) {
         invasionmod$needReturnLoot = nbt.getBoolean("needReturnLoot");
@@ -108,6 +111,9 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         invasionmod$sinnerCounter = nbt.getInt("sinnerCounter");
     }
 
+    /*
+     * Writes player's custom data from serverplayer properties (called on leave).
+     * */
     @Inject(method = "writeCustomDataToNbt", at = @At("HEAD"))
     private void writeReturnLoot(NbtCompound nbt, CallbackInfo ci) {
         nbt.putBoolean("needReturnLoot", invasionmod$needReturnLoot);
@@ -115,6 +121,10 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         nbt.putInt("sinnerCounter", invasionmod$sinnerCounter);
     }
 
+    /*
+     * This injection modifies on death method so that dying phantoms get their loot cleared of
+     * 'owned by' tag.
+     * */
     @Inject(at = @At(value = "HEAD"), method = "onDeath")
     private void onDeathInject(DamageSource damageSource, CallbackInfo ci) {
         PlayerEntity playerEntity = ((PlayerEntity) ((Object) this));
@@ -133,12 +143,15 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         for (List<ItemStack> list : combinedInventory) {
             for (ItemStack stack : list) {
                 if (stack.isEmpty()) continue;
-                Nbt.clearOwned(stack);
+                ItemStackData.clearOwned(stack);
                 LOGGER.info("Cleared tag from ItemStack: " + stack);
             }
         }
     }
 
+    /*
+     * Overwrites general overworld with player's overworld when reading custom data (on join).
+     * */
     @ModifyExpressionValue(at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;OVERWORLD:Lnet/minecraft/registry/RegistryKey;"), method = "readCustomDataFromNbt")
     private RegistryKey<World> readCustomDataFromNbtInject(RegistryKey<World> original) {
         ServerPlayerEntity player = (ServerPlayerEntity) ((Object) this);
@@ -146,6 +159,9 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         return DimensionManager.getPlayerWorldHandle(player.getUuidAsString(), server).getRegistryKey();
     }
 
+    /*
+     * This injection in serverplayer tick adds lastchankpos tracking.
+     * */
     @Inject(method = "tick", at = @At("HEAD"))
     private void tickInject(CallbackInfo ci) {
         ServerPlayerEntity player = (ServerPlayerEntity) ((Object) this);
@@ -158,6 +174,9 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         invasionmod$lastChunkPos = currentChunkPos;
     }
 
+    /*
+     * This injection raises onwakeup event when player wakes up.
+     * */
     @Inject(method = "wakeUp", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkManager;sendToNearbyPlayers(Lnet/minecraft/entity/Entity;Lnet/minecraft/network/packet/Packet;)V"))
     private void wakeUpInject(boolean skipSleepTimer, boolean updateSleepingPlayers, CallbackInfo ci) {
         ServerPlayerEntity player = (ServerPlayerEntity) ((Object) this);
@@ -165,6 +184,9 @@ public abstract class ServerPlayerEntityMixin implements ServerPlayerEntityAcces
         ServerPlayerEntityCallback.ON_WAKE_UP.invoker().notify(player);
     }
 
+    /*
+     * This injection raises onplayerswinghand event when player swings hand.
+     * */
     @Inject(at = @At(value = "TAIL"), method = "swingHand")
     private void swingHandInject(Hand hand, CallbackInfo ci) {
         ServerPlayerEntityCallback.ON_PLAYER_SWING_HAND.invoker().notify(hand, ((ServerPlayerEntity) ((Object) this)));

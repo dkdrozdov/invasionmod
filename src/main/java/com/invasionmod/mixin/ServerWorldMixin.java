@@ -16,6 +16,9 @@ import static com.invasionmod.InvasionMod.PHANTOM;
 @Mixin(ServerWorld.class)
 public abstract class ServerWorldMixin {
 
+    /*
+    * This injection adds logging to player teleport code.
+    * */
     @Inject(at = @At(value = "TAIL"), method = "onPlayerTeleport")
     private void onPlayerTeleportInject(ServerPlayerEntity player, CallbackInfo ci) {
         ServerWorld serverWorld = (ServerWorld) ((Object) this);
@@ -25,6 +28,9 @@ public abstract class ServerWorldMixin {
                         serverWorld.getRegistryKey().getValue()));
     }
 
+    /*
+     * This injection removes phantom status effects when player changes dimension.
+     * */
     @Inject(at = @At(value = "TAIL"), method = "onPlayerChangeDimension")
     private void onPlayerChangeDimensionInject(ServerPlayerEntity player, CallbackInfo ci) {
         ServerWorld serverWorld = (ServerWorld) ((Object) this);

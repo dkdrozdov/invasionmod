@@ -3,7 +3,7 @@ package com.invasionmod.entity.effect;
 import com.google.common.collect.ImmutableList;
 import com.invasionmod.DimensionManager;
 import com.invasionmod.access.ServerPlayerEntityAccess;
-import com.invasionmod.util.Nbt;
+import com.invasionmod.util.ItemStackData;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
@@ -42,7 +42,7 @@ public class PhantomStatusEffect extends StatusEffect {
             for (List<ItemStack> list : combinedInventory) {
                 for (ItemStack stack : list) {
                     if (stack.isEmpty()) continue;
-                    Nbt.setIsOwned(stack, true);
+                    ItemStackData.setIsOwned(stack, true);
                 }
             }
         }
@@ -74,8 +74,8 @@ public class PhantomStatusEffect extends StatusEffect {
                 ItemStack itemStack = list.get(i);
 
                 if (itemStack.isEmpty()) continue;
-                if (Nbt.getIsOwned(itemStack)) {
-                    Nbt.clearOwned(itemStack);
+                if (ItemStackData.getIsOwned(itemStack)) {
+                    ItemStackData.clearOwned(itemStack);
                     continue;
                 }
 

@@ -19,6 +19,10 @@ import static com.invasionmod.InvasionMod.PHANTOM;
 @Mixin(Entity.class)
 public abstract class EntityMixin {
 
+    /*
+    * This injection modifies entity portal ticking behaviour when teleporting from nether,
+    * so that players teleport back to their worlds, not to the general overworld.
+    * */
     @ModifyExpressionValue(at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;OVERWORLD:Lnet/minecraft/registry/RegistryKey;"), method = "tickPortal")
     private RegistryKey<World> tickPortalModifyOverworld(RegistryKey<World> original) {
         Entity entity = ((Entity) ((Object) this));
@@ -31,6 +35,10 @@ public abstract class EntityMixin {
         return original;
     }
 
+    /*
+    * This injection modifies entity portal ticking behaviour when teleporting to nether,
+    * so that phantoms escaping through nether portals get their loot managed.
+    * */
     @Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;resetPortalCooldown()V"), method = "tickPortal")
     private void tickPortalInject(CallbackInfo ci) {
         Entity entity = ((Entity) ((Object) this));

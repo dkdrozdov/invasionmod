@@ -3,7 +3,7 @@ package com.invasionmod.item;
 import com.invasionmod.DimensionManager;
 import com.invasionmod.InvasionMod;
 import com.invasionmod.access.ServerPlayerEntityAccess;
-import com.invasionmod.util.Nbt;
+import com.invasionmod.util.ItemStackData;
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -43,8 +43,8 @@ import java.util.*;
 import java.util.function.Predicate;
 
 import static com.invasionmod.InvasionMod.*;
-import static com.invasionmod.util.Nbt.getPlayerUuid;
-import static com.invasionmod.util.Nbt.hasNbtPlayerUuid;
+import static com.invasionmod.util.ItemStackData.getPlayerUuid;
+import static com.invasionmod.util.ItemStackData.hasDataPlayerUuid;
 import static com.invasionmod.util.Util.getOpposite;
 import static net.minecraft.block.Blocks.*;
 import static net.minecraft.util.ActionResult.PASS;
@@ -141,7 +141,7 @@ public class SoulGrabberItem extends Item {
 
     private String getTargetUUID(ItemStack itemStack, PlayerEntity player) {
 
-        if (!hasNbtPlayerUuid(itemStack)) {
+        if (!hasDataPlayerUuid(itemStack)) {
             LOGGER.info("Player %s with UUID %s tried to use DimensionGrabberItem, but the target uuid is empty."
                     .formatted(player.getName().getString(), player.getUuidAsString()));
             player.sendMessage(Text.translatable("invasionmod.soul_grabber.should_choose_player"), true);
@@ -223,7 +223,7 @@ public class SoulGrabberItem extends Item {
 
         ServerWorld serverWorld = (ServerWorld) playerWorld;
 
-        if (hasNbtPlayerUuid(soulGrabberStack)) return false;
+        if (hasDataPlayerUuid(soulGrabberStack)) return false;
 
         MinecraftServer server = serverWorld.getServer();
 
@@ -485,7 +485,7 @@ public class SoulGrabberItem extends Item {
 
     @Override
     public void appendTooltip(ItemStack itemStack, World world, List<Text> tooltip, TooltipContext tooltipContext) {
-        String playerName = Nbt.getPlayerName(itemStack);
+        String playerName = ItemStackData.getPlayerName(itemStack);
 
         if (!Objects.equals(playerName, "")) {
             tooltip.add(Text.literal(playerName).formatted(Formatting.BOLD, Formatting.YELLOW));

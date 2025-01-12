@@ -17,11 +17,25 @@ import static com.invasionmod.InvasionMod.CHUNK_SWAPPER;
 @Mixin(AdvancementRewards.class)
 public abstract class AdvancementRewardsMixin {
 
+    /*
+     * This variable foreshadows the experience method parameter, which defines
+     * amount of experience player gets.
+     *
+     * If experience is not 0, a Chunk Swapper is given.
+     */
     @Shadow
     public abstract int experience();
 
+    /*
+     * By design, players should get Chunk Swapper when they achieve a difficult advancement.
+     * It was decided to define difficult advancements as advancements that give experience.
+     *
+     * This injection creates and gives a Chunk Swapper to a player who is being rewarded
+     * with experience for an advancement.
+     *
+     */
     @Inject(at = @At(value = "HEAD"), method = "apply")
-    private void onPlayerTeleportInject(ServerPlayerEntity player, CallbackInfo ci) {
+    private void onPlayerGetAdvancementReward(ServerPlayerEntity player, CallbackInfo ci) {
         if (experience() > 0) {
             ItemEntity itemEntity = player.dropItem(new ItemStack(CHUNK_SWAPPER, 1), false);
             if (itemEntity != null)

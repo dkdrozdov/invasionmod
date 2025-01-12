@@ -35,6 +35,10 @@ public abstract class PlayerManagerMixin {
     @Final
     private MinecraftServer server;
 
+    /*
+    * This injection adds logic to connecting players so that their world is loaded and or created and
+    * they are spawned in their world.
+    * */
     @ModifyExpressionValue(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;getWorld(Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/server/world/ServerWorld;"), method = "onPlayerConnect")
     private ServerWorld onPlayerConnectInject(ServerWorld original, ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData) {
         LOGGER.info("Connected player%s with UUID %s."
@@ -55,6 +59,10 @@ public abstract class PlayerManagerMixin {
             return server.getWorld(registryKey);
     }
 
+    /*
+    * This injection modifies the code of players joining while being in unloaded world, so that
+    * the world they're in is loaded (if they are a phantom) and they are teleported back to their world.
+    * */
     @ModifyExpressionValue(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "onPlayerConnect")
     private ServerWorld onPlayerConnectUnknownDimensionInject(ServerWorld original, ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, @Local RegistryKey<World> registryKey) {
         LOGGER.info("Detected " + player.getName().getString() + " tries to spawn on unloaded world.");
@@ -74,6 +82,9 @@ public abstract class PlayerManagerMixin {
         return worldHandle.asWorld();
     }
 
+    /*
+    * This injection replaces general overworld with player's overworld in player respawn code.
+    * */
     @ModifyExpressionValue(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "respawnPlayer")
     private ServerWorld onRespawnPlayerInject(ServerWorld original, ServerPlayerEntity player, boolean alive) {
         return DimensionManager.getPlayerWorldHandle(player.getUuidAsString(), server).asWorld();

@@ -2,7 +2,7 @@ package com.invasionmod.mixin;
 
 import com.invasionmod.DimensionManager;
 import com.invasionmod.entity.GhostEntity;
-import com.invasionmod.util.Nbt;
+import com.invasionmod.util.ItemStackData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -27,6 +27,8 @@ public abstract class PlayerEntityMixin {
     /**
      * @param targetEntity The entity that PlayerEntity interacts with.
      * @param hand         The hand that holds the item that PlayerEntity has used on @entity
+     * This injection modifies player interaction so that when player right clicks with soul grabber on
+     * another player the item stack data about target world and nickname is written.
      */
     @Inject(at = @At(value = "HEAD"), method = "interact", cancellable = true)
     private void interactInject(Entity targetEntity, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
@@ -39,14 +41,14 @@ public abstract class PlayerEntityMixin {
                 targetEntity.getName().getString() + " of type " + targetEntity.getClass() + ".");
 
         if (((targetEntity instanceof PlayerEntity) || (targetEntity instanceof GhostEntity)) && itemStack.isOf(SOUL_GRABBER)) {
-            if (Nbt.hasNbtPlayerUuid(itemStack)) {
+            if (ItemStackData.hasDataPlayerUuid(itemStack)) {
                 LOGGER.info(("Player %s with UUID %s tried to grab uuid of player %s " +
                         "with UUID %s via DimensionGrabberItem, but the itemStack already has target: %s")
                         .formatted(playerEntity.getName().getString(),
                                 playerEntity.getUuidAsString(),
                                 targetEntity.getName().toString(),
                                 targetEntity.getUuidAsString(),
-                                DimensionManager.getPlayerWorldRegistry(Nbt.getPlayerUuid(itemStack)).toString()));
+                                DimensionManager.getPlayerWorldRegistry(ItemStackData.getPlayerUuid(itemStack)).toString()));
                 playerEntity.sendMessage(Text.translatable("invasionmod.soul_grabber.already_has_soul"), true);
                 return;
             }
@@ -67,8 +69,8 @@ public abstract class PlayerEntityMixin {
             playerName = targetPlayer.getName().getString();
             playerUuid = targetPlayer.getUuidAsString();
 
-            Nbt.setPlayerName(itemStack, playerName);
-            Nbt.setPlayerUuid(itemStack, playerUuid);
+            ItemStackData.setPlayerName(itemStack, playerName);
+            ItemStackData.setPlayerUuid(itemStack, playerUuid);
 
             LOGGER.info("grabbed uuid: " + playerUuid);
 

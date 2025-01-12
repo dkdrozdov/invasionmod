@@ -14,6 +14,11 @@ import static com.invasionmod.InvasionMod.PHANTOM;
 
 @Mixin(BlockItem.class)
 public abstract class BlockItemMixin {
+
+    /*
+     * This injection modifies check for player's ability to place blocks, so that
+     * phantoms can only place falling blocks.
+     */
     @ModifyExpressionValue(
             method = "place(Lnet/minecraft/item/ItemPlacementContext;)Lnet/minecraft/util/ActionResult;",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemPlacementContext;canPlace()Z"))

@@ -19,6 +19,10 @@ import static com.invasionmod.InvasionMod.PHANTOM;
 @Mixin(BucketItem.class)
 
 public abstract class BucketItemMixin {
+    /*
+    * This injection modifies check for player's ability to use buckets, so that
+     * phantoms can not use them.
+    * */
     @Inject(method = "use",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/util/hit/BlockHitResult;getBlockPos()Lnet/minecraft/util/math/BlockPos;"), cancellable = true)
     private void preventPlacingByPhantom(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {

@@ -6,21 +6,21 @@ import net.minecraft.nbt.NbtCompound;
 
 import static com.invasionmod.InvasionMod.MOD_ID;
 
-public class Nbt {
+public class ItemStackData {
     private static final String PLAYER_UUID = "player_uuid";
     private static final String PLAYER_NAME = "player_name";
     private static final String IS_OWNED = "is_owned";
 
-    static public NbtCompound createNbtIfAbsent(ItemStack stack) {
+    static public NbtCompound createDataIfAbsent(ItemStack stack) {
         if (!stack.hasNbt()) {
             stack.setNbt(new NbtCompound());
         }
         return stack.getOrCreateSubNbt(MOD_ID);
     }
 
-    static private int getNbtInt(ItemStack stack, String nbtName) {
+    static private int getDataInt(ItemStack stack, String nbtName) {
         int value = 0;
-        NbtCompound nbt = createNbtIfAbsent(stack);
+        NbtCompound nbt = createDataIfAbsent(stack);
 
         if (!nbt.contains(nbtName)) {
             nbt.putInt(nbtName, value);
@@ -31,9 +31,9 @@ public class Nbt {
         return value;
     }
 
-    static private String getNbtString(ItemStack stack, String nbtName) {
+    static private String getDataString(ItemStack stack, String nbtName) {
         String value = "";
-        NbtCompound nbt = createNbtIfAbsent(stack);
+        NbtCompound nbt = createDataIfAbsent(stack);
 
         if (!nbt.contains(nbtName)) {
             nbt.putString(nbtName, value);
@@ -44,52 +44,52 @@ public class Nbt {
         return value;
     }
 
-    static private void setNbt(ItemStack stack, String nbtName, int value) {
+    static private void setData(ItemStack stack, String nbtName, int value) {
         stack.getOrCreateSubNbt(MOD_ID).putInt(nbtName, value);
     }
 
-    static private void setNbt(ItemStack stack, String nbtName, String value) {
+    static private void setData(ItemStack stack, String nbtName, String value) {
         stack.getOrCreateSubNbt(MOD_ID).putString(nbtName, value);
     }
 
     static public String getPlayerUuid(ItemStack stack) {
-        return getNbtString(stack, PLAYER_UUID);
+        return getDataString(stack, PLAYER_UUID);
     }
 
     public static void setPlayerUuid(ItemStack stack, String playerUuid) {
-        setNbt(stack, PLAYER_UUID, playerUuid);
+        setData(stack, PLAYER_UUID, playerUuid);
     }
 
     static public String getPlayerName(ItemStack stack) {
-        return getNbtString(stack, PLAYER_NAME);
+        return getDataString(stack, PLAYER_NAME);
     }
 
     static public void setPlayerName(ItemStack stack, String playerName) {
-        setNbt(stack, PLAYER_NAME, playerName);
+        setData(stack, PLAYER_NAME, playerName);
     }
 
 
     static public void setIsOwned(ItemStack stack, boolean isOwned) {
         if (isOwned)
-            setNbt(stack, IS_OWNED, "true");
+            setData(stack, IS_OWNED, "true");
         else
-            clearNbt(stack, IS_OWNED);
+            clearData(stack, IS_OWNED);
     }
 
-    static private void clearNbt(ItemStack stack, String nbtName) {
+    static private void clearData(ItemStack stack, String nbtName) {
         stack.getOrCreateSubNbt(MOD_ID).remove(nbtName);
         if (!(stack.getItem() instanceof SoulGrabberItem))
             stack.removeSubNbt(MOD_ID);
     }
 
     static public void clearOwned(ItemStack stack) {
-        clearNbt(stack, IS_OWNED);
+        clearData(stack, IS_OWNED);
     }
 
     static public boolean getIsOwned(ItemStack stack) {
-        NbtCompound nbt = createNbtIfAbsent(stack);
+        NbtCompound nbt = createDataIfAbsent(stack);
         if (!nbt.contains(IS_OWNED)) {
-            clearNbt(stack, IS_OWNED);
+            clearData(stack, IS_OWNED);
 
             return false;
         }
@@ -97,8 +97,8 @@ public class Nbt {
         return true;
     }
 
-    static public boolean hasNbtPlayerUuid(ItemStack stack) {
-        NbtCompound nbt = createNbtIfAbsent(stack);
+    static public boolean hasDataPlayerUuid(ItemStack stack) {
+        NbtCompound nbt = createDataIfAbsent(stack);
 
         return nbt.contains(PLAYER_UUID);
     }

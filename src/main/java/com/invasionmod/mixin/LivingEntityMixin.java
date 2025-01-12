@@ -4,7 +4,7 @@ import com.invasionmod.DimensionManager;
 import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
 import com.invasionmod.item.SoulGrabberItem;
-import com.invasionmod.util.Nbt;
+import com.invasionmod.util.ItemStackData;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -29,7 +29,10 @@ import static com.invasionmod.InvasionMod.*;
 @Debug(export = true)
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
-
+    /*
+    * This injection modifies living entity removing status effect behaviour so that
+    * expiring phantoms are teleported back to their world and their loot is managed.
+    * */
     @Inject(at = @At(value = "TAIL"), method = "onStatusEffectRemoved")
     private void onStatusEffectRemovedInject(StatusEffectInstance effect, CallbackInfo ci) {
         LivingEntity livingEntity = ((LivingEntity) ((Object) this));
@@ -79,6 +82,7 @@ public abstract class LivingEntityMixin {
         cir.setReturnValue(cir.getReturnValue() && !target.hasStatusEffect(PHANTOM));
     }
 
+    // awards travel stones and updates sinner counter when player is killed
     @Inject(at = @At(value = "HEAD"), method = "onKilledBy")
     private void onKilledByInject(LivingEntity killer, CallbackInfo ci) {
         if (killer == null || killer.getWorld().isClient) return;
@@ -97,7 +101,7 @@ public abstract class LivingEntityMixin {
                 ((ServerPlayerEntityAccess) killedPlayer).invasionmod$setShouldGetStone(true);
 
             if (!killerPlayer.giveItemStack(stoneStack)) {
-                if (killerPlayer.hasStatusEffect(PHANTOM)) Nbt.setIsOwned(stoneStack, true);
+                if (killerPlayer.hasStatusEffect(PHANTOM)) ItemStackData.setIsOwned(stoneStack, true);
 
                 ItemEntity itemEntity = killerPlayer.dropItem(stoneStack, true, false);
                 killer.getWorld().spawnEntity(itemEntity);
