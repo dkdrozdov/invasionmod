@@ -4,9 +4,12 @@ import com.invasionmod.access.ServerPlayerEntityAccess;
 import com.invasionmod.callback.ServerPlayerEntityCallback;
 import com.invasionmod.entity.GhostEntity;
 import com.invasionmod.entity.effect.PhantomStatusEffect;
+import com.invasionmod.entity.effect.RepellingStatusEffect;
+import com.invasionmod.entity.effect.StrangerStatusEffect;
 import com.invasionmod.item.ChunkSwapperItem;
 import com.invasionmod.item.SoulGrabberItem;
 import com.invasionmod.item.TravelStoneItem;
+import com.invasionmod.registry.Registry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -34,13 +37,12 @@ import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
 import net.minecraft.predicate.block.BlockStatePredicate;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -59,39 +61,20 @@ public class InvasionMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final Identifier IS_RESPAWN_ALLOWED_REQUEST_PACKET_ID = new Identifier(MOD_ID, "is_respawn_allowed_request");
     public static final Identifier ALLOW_RESPAWN_PACKET_ID = new Identifier(MOD_ID, "is_respawn_allowed_answer");
-
-    public static final Item TRAVEL_STONE =
-            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "travel_stone"),
-                    new TravelStoneItem(new FabricItemSettings()));
-
-    public static final Item SOUL_GRABBER =
-            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "soul_grabber"),
-                    new SoulGrabberItem(new FabricItemSettings().maxCount(1)));
-    public static final Item CHUNK_SWAPPER =
-            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chunk_swapper"),
-                    new ChunkSwapperItem(new FabricItemSettings()));
-
-    public static final Block SUPPRESSOR =
-            Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "suppressor"),
-                    new Block(FabricBlockSettings.create().strength(3f).requiresTool()));
-
-    public static final BlockItem SUPPRESSOR_ITEM =
-            Registry.register(Registries.ITEM, new Identifier(MOD_ID, "suppressor"),
-                    new BlockItem(SUPPRESSOR, new FabricItemSettings()));
-
-
-    public static final StatusEffect PHANTOM =
-            Registry.register(Registries.STATUS_EFFECT, new Identifier(MOD_ID, "phantom"),
-                    new PhantomStatusEffect());
-
+    public static final Item TRAVEL_STONE = Registry.register(new TravelStoneItem(new FabricItemSettings()), "travel_stone");
+    public static final StatusEffect PHANTOM = Registry.register(new PhantomStatusEffect(), "phantom");
+    public static final StatusEffect REPELLING = Registry.register(new RepellingStatusEffect(), "repelling");
+    public static final StatusEffect STRANGER = Registry.register(new StrangerStatusEffect(), "stranger");
+    public static final FoodComponent REPELLING_FRUIT_FOOD_COMPONENT = new FoodComponent.Builder()
+            .alwaysEdible().snack().statusEffect(new StatusEffectInstance(REPELLING, 2 * 60 * 20, 0), 1.0f).build();
+    public static final Item REPELLING_FRUIT = Registry.register(new Item(new FabricItemSettings().food(REPELLING_FRUIT_FOOD_COMPONENT)), "repelling_fruit");
+    public static final Item SOUL_GRABBER = Registry.register(new SoulGrabberItem(new FabricItemSettings().maxCount(1)), "soul_grabber");
+    public static final Item CHUNK_SWAPPER = Registry.register(new ChunkSwapperItem(new FabricItemSettings()), "chunk_swapper");
+    public static final Block SUPPRESSOR = Registry.register(new Block(FabricBlockSettings.create().strength(3f).requiresTool()), "suppressor");
+    public static final BlockItem SUPPRESSOR_ITEM = Registry.register(new BlockItem(SUPPRESSOR, new FabricItemSettings()), "suppressor");
     public static BlockPattern portalPattern = null;
     private static final Predicate<BlockState> IS_LIT_SOUL_CAMPFIRE = state -> state != null && state.isOf(Blocks.SOUL_CAMPFIRE) && state.get(CampfireBlock.LIT);
-
-    public static final EntityType<GhostEntity> GHOST = Registry.register(
-            Registries.ENTITY_TYPE,
-            new Identifier(MOD_ID, "ghost"),
-            FabricEntityTypeBuilder.create(SpawnGroup.MISC, GhostEntity::new).disableSaving().dimensions(EntityDimensions.fixed(0.6f, 1.8f)).trackRangeBlocks(32).trackedUpdateRate(2).build()
-    );
+    public static final EntityType<GhostEntity> GHOST = Registry.register(FabricEntityTypeBuilder.create(SpawnGroup.MISC, GhostEntity::new).disableSaving().dimensions(EntityDimensions.fixed(0.6f, 1.8f)).trackRangeBlocks(32).trackedUpdateRate(2).build(), "ghost");
 
     @Override
     public void onInitialize() {
@@ -99,18 +82,20 @@ public class InvasionMod implements ModInitializer {
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
 
-
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
                 .register(content -> content.add(TRAVEL_STONE));
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
                 .register(content -> content.add(SOUL_GRABBER));
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
                 .register(content -> content.add(CHUNK_SWAPPER));
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.BUILDING_BLOCKS)
                 .register(content -> content.add(SUPPRESSOR_ITEM));
+
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK)
+                .register(content -> content.add(REPELLING_FRUIT));
 
         FabricDefaultAttributeRegistry.register(GHOST, GhostEntity.createLivingAttributes());
 
@@ -189,7 +174,7 @@ public class InvasionMod implements ModInitializer {
         // entity attacking restrictions
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) ->
         {
-            if (player.hasStatusEffect(PHANTOM) && !(entity instanceof PlayerEntity)) {
+            if ((player.hasStatusEffect(PHANTOM) && !player.hasStatusEffect(STRANGER)) && !(entity instanceof PlayerEntity)) {
                 player.sendMessage(Text.translatable("invasionmod.phantom.cant_attack_mobs"), true);
 
                 return ActionResult.FAIL;

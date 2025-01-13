@@ -53,6 +53,15 @@ public class InvasionModRecipeProvider  extends FabricRecipeProvider {
                 .input(GOLD_INGOT)
                 .criterion(FabricRecipeProvider.hasItem(SOUL_SAND), FabricRecipeProvider.conditionsFromItem(SOUL_SAND))
                 .offerTo(exporter);
+
+        // Repelling Fruit
+
+        ShapelessRecipeJsonBuilder.create(RecipeCategory.MISC, REPELLING_FRUIT)
+                .input(BEETROOT)
+                .input(SPIDER_EYE)
+                .criterion(FabricRecipeProvider.hasItem(BEETROOT), FabricRecipeProvider.conditionsFromItem(BEETROOT))
+                .criterion(FabricRecipeProvider.hasItem(SPIDER_EYE),FabricRecipeProvider.conditionsFromItem(SPIDER_EYE))
+                .offerTo(exporter);
     }
 }
 
