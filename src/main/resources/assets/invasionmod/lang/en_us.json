@@ -22,5 +22,9 @@
   "invasionmod.soul_grabber.target_dead":"Target player is dead.",
   "invasionmod.soul_grabber.already_has_soul":"Soul grabber already has soul!",
   "invasionmod.soul_grabber.suppressor_denied" : "Action is suppressed!",
-  "invasionmod.soul_grabber.empty" : "Empty"
+  "invasionmod.soul_grabber.empty" : "Empty",
+  "advancement.invasionmod.get_travel_stone.title" : "Threatening Assets",
+  "advancement.invasionmod.get_travel_stone.description" : "Get a Travel Stone",
+  "advancement.invasionmod.root.title": "Invasion Mod",
+  "advancement.invasionmod.root.description": "Invade or be invaded!"
 }

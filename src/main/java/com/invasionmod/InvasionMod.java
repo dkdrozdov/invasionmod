@@ -102,9 +102,11 @@ public class InvasionMod implements ModInitializer {
         if (portalPattern == null) {
             portalPattern = BlockPatternBuilder
                     .start()
-                    .aisle("CAC")
-                    .aisle("AAA")
-                    .aisle("CAC")
+                    .aisle("AAAAA", "AAAAA", "AAAAA")
+                    .aisle("AAAAA", "ACACA", "AAAAA")
+                    .aisle("AAAAA", "AAAAA", "AAAAA")
+                    .aisle("AAAAA", "ACACA", "AAAAA")
+                    .aisle("AAAAA", "AAAAA", "AAAAA")
                     .where('C', CachedBlockPosition.matchesBlockState(IS_LIT_SOUL_CAMPFIRE))
                     .where('A', CachedBlockPosition.matchesBlockState(BlockStatePredicate.ANY))
                     .build();

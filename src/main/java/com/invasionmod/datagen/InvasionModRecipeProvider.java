@@ -10,7 +10,18 @@ import net.minecraft.util.Identifier;
 import static com.invasionmod.InvasionMod.*;
 import static net.minecraft.item.Items.*;
 
-public class InvasionModRecipeProvider  extends FabricRecipeProvider {
+
+/**
+ * Provides recipes for items:
+ * <ul>
+ *  <li>Travel stone
+ *  <li>Travel stone from suppressor
+ *  <li>Suppressor
+ *  <li>Soul Grabber
+ *  <li>Repelling Fruit
+ * <ul/>
+ */
+public class InvasionModRecipeProvider extends FabricRecipeProvider {
 
     public InvasionModRecipeProvider(FabricDataOutput output) {
         super(output);
@@ -33,7 +44,7 @@ public class InvasionModRecipeProvider  extends FabricRecipeProvider {
         ShapelessRecipeJsonBuilder.create(RecipeCategory.MISC, TRAVEL_STONE)
                 .input(SUPPRESSOR_ITEM)
                 .criterion(FabricRecipeProvider.hasItem(SUPPRESSOR_ITEM), FabricRecipeProvider.conditionsFromItem(SUPPRESSOR_ITEM))
-                .offerTo(exporter, Identifier.of(MOD_ID, getRecipeName(TRAVEL_STONE)+"_from_suppressor"));
+                .offerTo(exporter, Identifier.of(MOD_ID, getRecipeName(TRAVEL_STONE) + "_from_suppressor"));
 
 
         // Suppressor
@@ -60,7 +71,7 @@ public class InvasionModRecipeProvider  extends FabricRecipeProvider {
                 .input(BEETROOT)
                 .input(SPIDER_EYE)
                 .criterion(FabricRecipeProvider.hasItem(BEETROOT), FabricRecipeProvider.conditionsFromItem(BEETROOT))
-                .criterion(FabricRecipeProvider.hasItem(SPIDER_EYE),FabricRecipeProvider.conditionsFromItem(SPIDER_EYE))
+                .criterion(FabricRecipeProvider.hasItem(SPIDER_EYE), FabricRecipeProvider.conditionsFromItem(SPIDER_EYE))
                 .offerTo(exporter);
     }
 }

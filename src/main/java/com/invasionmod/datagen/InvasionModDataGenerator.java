@@ -7,8 +7,9 @@ public class InvasionModDataGenerator implements DataGeneratorEntrypoint {
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         final FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
-        // ...
+
         pack.addProvider(InvasionModRecipeProvider::new);
+        pack.addProvider(InvasionModAdvancementProvider::new);
         pack.addProvider(InvasionModLootTableProvider::new);
     }
 }

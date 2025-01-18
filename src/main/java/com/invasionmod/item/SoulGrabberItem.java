@@ -322,9 +322,9 @@ public class SoulGrabberItem extends Item {
         Direction left = forwards.rotateYCounterclockwise();
         BlockPos portalCenter = (targetWorldPortalMatch == null ? portalMatch : targetWorldPortalMatch)
                 .getFrontTopLeft()
-                .offset(forwards, 1)
-                .offset(left.getOpposite(), 1)
-                .offset(Direction.DOWN, 4);
+                .offset(forwards, 2)
+                .offset(left.getOpposite(), 2)
+                .offset(Direction.DOWN, 1);
 
         if (targetWorldPortalMatch == null || targetWorldPortalMatch.getUp() != Direction.UP) {
             List<BlockPos> columnOrigins = List.of(
@@ -333,10 +333,6 @@ public class SoulGrabberItem extends Item {
                     portalCenter.west().south(),
                     portalCenter.east().south());
             List<BlockState> columnBlockStates = List.of(
-                    QUARTZ_BRICKS.getDefaultState(),
-                    QUARTZ_BRICKS.getDefaultState(),
-                    QUARTZ_BRICKS.getDefaultState(),
-                    HAY_BLOCK.getDefaultState(),
                     SOUL_CAMPFIRE.getDefaultState());
 
             for (BlockPos columnOrigin : columnOrigins) {

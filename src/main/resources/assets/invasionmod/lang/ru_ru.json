@@ -22,5 +22,9 @@
   "invasionmod.soul_grabber.target_dead": "Выбранный игрок мертв.",
   "invasionmod.soul_grabber.already_has_soul": "В хватателе душ уже есть душа!",
   "invasionmod.soul_grabber.suppressor_denied" : "Действие подавлено супрессором!",
-  "invasionmod.soul_grabber.empty" : "Пусто"
+  "invasionmod.soul_grabber.empty" : "Пусто",
+  "advancement.invasionmod.get_travel_stone.title" : "Угрожающие активы",
+  "advancement.invasionmod.get_travel_stone.description" : "Добудьте камень путешествия",
+  "advancement.invasionmod.root.title": "Invasion Mod",
+  "advancement.invasionmod.root.description": "Вторгайся, да сам не зевай!"
 }
